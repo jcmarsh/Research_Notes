@@ -1,0 +1,913 @@
+* Wed Jul 25 06:46:18 PDT 2012
+Edit hijack.c to compile without the following includes (comment out error lines)
+
+Where the bloody hell is pte_t defined, and why is it throwing errors before I even change anything?
+	pte_t is in linux/arch/x86/ and has two defs, depending on if the system is 32 or 64 bit.
+	if 32, then it has two unsigned longs: pte and pte_low, 32 bits each. 64 has one unsigned long (64 bits)
+	paddr_t is also an unsigned long
+
+FIXME Topics thus far: PTE IPC.H MMAP.H HW_INTS.H
+
+How about ipc.h? Just a function to init.
+asm_init_defs.h seems like an obvious place that changes will need to be made. Perhaps split into two .h files.
+
+* Mon Jul 30 14:56:50 PDT 2012
+Okay, I have started to look into some the assemble (ipc.S and kern_entry.S), and things are going slowly.
+** Good things to know:
+Composite uses the AT&T style format
+  Compile with "as" instead of "nasm"
+  Registers are prefixed with %
+  Source operand comes before the destination
+** It is all going to have to change to make the switch to x86_64
+ 
+* Tue Jul 31 08:01:52 PDT 2012
+Assembly is on the back burner. Will try today to get a basic build (which will just fail out).
+I will start committing changes to my local git.
+** Changed the struct spd_location in spd.h to use long instead of int, to eliminate warnings about shifting more than the size of a type... ints are always 4 bytes while longs changed from 4 to 8. This will likely be a recurring source of problems.
+There is a similar problem with #define SHARED_REGION_START in kernel/include/shared/consts.h
+Currently it is set to (1<<30), which corresponds to 1 gb? Or the location of the 1st gb in the pagetable?
+If it is set to something greater than (1<<31) then I get warnings that the left shifts are wider than the type
+  Things like current->mm must be ints instead of longs
+** I need to calculate how to address the first gb in the 64 bit linux
+How is it currently working? Is composite using pgtable-2level_types.h or pgtable-3level_types.h?
+  pgtable-2level_types.h, since when pte_high does not exist.
+** I made some changed to consts.h, set them to what I think will be the correct values and added some casts
+
+** F-ing unions man. Now I know what they are. And that I can safely just use pte_t->pte instead of pte_t->pte_low (since both pte and pte_low are pteval_t)
+As such, I have been able to uncomment some PTE code.
+
+** Tomorrow I should check to see if I have actually cleaned up all of the PTE stuff, and ask Gabe about consts.h.
+
+* Fri Aug  3 09:13:54 EDT 2012
+Notes on creating my presentation on low level embedded OSes.
+** What is the domain?
+Sensor network
+Smart Home
+"Internet of Things"
+
+** What constraints impact design decisions?
+Extreme hardware constraints
+ No disk
+ kBs of ROM, Bytes of RAM
+ Clock speed in Mhz
+ As little power as possible
+
+TinyOS
+Component based, small granularity
+Split - phase execution: events (interrupts) and tasks ()
+nesC: restricted c to do compile time checking and inlining
+
+EMERALDS
+
+CONTIKI
+Dynamic code updates
+
+** What are the common abstractions?
+Events
+Threads? At user level, because "states are hard"
+Message passing
+
+* Mon Aug  6 11:26:30 PDT 2012
+Not sure where to start. I need to ask Gabe how to go about actually running the core program (just hijack I guess).
+Can not insert the cos.ko module, because of all of its missing links: "insmod: error inserting 'cos.ko': -1 Unknown symbol in module" which I think result from all of the commented out includes. I will start adding them back in one at a time.
+#include "../../../kernel/include/spd.h"
+  No problems...
+#include "../../../kernel/include/ipc.h"    
+  Also no problems... I am suspicious.
+#include "../../../kernel/include/thread.h"   
+  It's too quite; no problems...
+#include "../../../kernel/include/measurement.h"
+  No Problems.
+#include "../../../kernel/include/mmap.h"    
+  NO PROBLEMS.
+#include "./hw_ints.h"
+  Hmm... still nothing wrong. Maybe things will be okay after all.
+#include "./kconfig_checks.h"      
+  Of course this has problems. I will just comment out.
+
+* Tue Aug  7 12:55:29 EDT 2012
+Where do I go from here? Back to assembly? Hmmm... maybe some of the other included files from the module Makefile.
+hw_ints.o
+About 7 of the following: warning: cast to pointer from integer of different size
+On lines like: cos_default_sysenter_addr = (void*)se_addr; 
+void* are now 64 bit, se_addr was declared as an int. Change to long?
+se_addr is used in the previous line: rdmsr(MSR_IA32_SYSENTER_EIP, se_addr, trash);     
+rdmsr is in arch/x86/include/asm/msr.h
+
+* Thu Aug  9 11:02:38 EDT 2012
+Switching to the org-mode format. Super Sweet. Now for actual work.
+
+** chk_offsets.c
+Gabe made this file so that at compile time we could have some checks in place to make sure that we are using the correct offsets into structs.
+He filled out the first few for thd_invocation_frame.
+I finally found the next struct: usr_inv_cap.
+Errors compiling... just need to #include <stddef.h> 
+Actually, no. The problem is that sizeof can not be used in a #if, and offsetof uses sizeof.
+I don't know why the size can't be known to the preprocessor, but deems the breaks.
+
+** Write a piece of assembly to make system calls in x86_64
+Can compile from c to assembly with: gcc -S -m64 file.c
+Must compile, and then link
+> as -o hello.o hello.S
+> ld -o hello hello.o  
+
+* Mon Aug 13 13:31:50 EDT 2012
+** Check for struct offsets
+In chk_offsets.*
+Will have to be done at runtime, during initialization because of sizeof problem.
+I'm not sure if I can use "assert()", since code may not be able to call out to linux. Maybe "perror()"?
+"assert" is used in the test cases... so I'm guessing it is okay to use. Actually, it used in kernel too.
+Okay, Gabe actual wrote his own assert (in kernel/include/debug.h). The test programs in platform/tests/ use the regular c assert.
+I will use Gabe's.
+I don't know what to do with syscall integer offsets... since they are bitshift amounts for an int
+I don't think that chk_offsets needs a header file. Ask Gabe how he prefers.
+Now where should I call the function from? Added call to check_offsets() in hijack.c
+** Syscall assembly
+I don't know what I'm doing.
+Trying to figure out ipc.S. <asm/asm-offsets.h> is generated... I'm not sure when. But it isn't in lxr.linux.no
+I couldn't find where "call cos_syscall_upcall_cont" went. Turns out it is in kernel/inv.c, so you can call c from assembly. Makes sense I suppose.
+Crap... there is a lot that is going to have to be changed in inv.c
+Look into pt_regs, and figure out if it is actually being defined by /kernel/include/shared/consts.h
+A lot here... need to focus.
+What the heck are these "brands"? "cos_syscall_brand"?
+These are all system calls provided by Composite (see inv.c cos_syscall_tbl). How can I test that? Testing framework indeed.
+** Syscall Testing Framework
+How can I actually do this?
+Perhaps later...
+** adding ../../../kernel/inv.o to platform/linux/module/Makefile
+Several compile warnings, tons of linker warnings.
+Most compiler: "warning: cast to pointer from integer of different size", will change casts?
+kernel/inv.c:1637 - easy fix, printk statement, changed format from %x to %lx and cast to an unsigned long
+kernel/inv.c:1845 - (unsigned int)(user_gi->data), changed cast to unsigned long. user_gi is a gather_item, defined in kernel/include/shared/cos_types.h, and data is a void *
+kernel/inv.c:1875 - another printk, this time looking at a sizeof (which returns a 'long unsigned int'???). printk has a format just for size_t: %zd (or %zx)
+kernel/inv.c:2170 - 
+
+* Tue Aug 14 13:50:57 EDT 2012
+** Continue adding ../../../kernel/inv.o to platform/linux/module/Makefile
+kernel/inv.c:2170 - type defined in cos_types (see heading below). "~0UL" means 2's complement of the unsigned long 0. A u32_t is assigned that value. So I will just change to "~0U".
+kernel/inv.c:3444 - "spd" defined in kernel/include/spd.h. Just another "pointers are now 64bit" problem. Changed cast.
+kernel/inv.c:3445, 3447, 3449 - Same as above. 3449 also required a format change to %zx for printk.
+Currently at 51 undefined labels
+** COS_BASE_TYPES in /kernel/include/shared/cos_types.h will need to be examined. Maybe not.
+As far as I can tell, they should be fine. A "long long" ends up being 64 bits on both architectures. The others are fine as well.
+The question is if their usage should be changed. That can be decided later.
+** adding ../../../kernel/thread.o to platform/linux/module/Makefile
+No problems, currently at 47 undefined labels
+** adding ../../../kernel/spd.o to platform/linux/module/Makefile
+kernel/spd.c:490, 506, 687 - printk and unsigned int problem, change to %zx and unsigned long
+Currently at 20 undefined labels
+** adding a bunch more, no problems
+../../../kernel/measurement.o - currently at 15 undefined labels
+../../../kernel/page_pool.o - currently at 12 undefined labels
+../../../kernel/mmap.o - currently at 10 undefined labels
+../../../kernel/ring_buff.o - currently at 8 undefined labels
+hw_ints.o - currently at 16 undefined labels
+Only ones left are kern_entry.o and ipc.o, which are the two big .S files
+** kern_entry.S is only 240 lines... so let's start there.
+kern_entry.S references "entry.S", which I am assuming is entry_32.S in the linux source. (lxr.linux.no is down! Had to find it myself!)
+Fuck.
+Seems like a bunch of the beginning stuff isn't needed. Offsets of some sort, but only ORIG_EAX is used.
+Couldn't find the equivalent code in entry_64.S, turns out a look of it is defined in calling.h.
+
+** grep, good to know
+> make | grep "WARNING" | wc -l  -- Does not work. make warnings go to stderr
+> make 2> errors.txt; wc -l errors.txt -- Does work.
+
+* Tue Aug 15 09:34:01 EDT 2012
+Time to tackle kern_entry. Since it is currently based off of entry_32.S in the linux source, I will base the new one off of entry_64.S.
+To start, I'm just copying kern_entry.S to my new file, kern_entry64.S, and will try to walk through it.
+I don't know of a good way to test it....
+** includes and define
+I didn't look into any of the <> includes. 
+"asym_exec_dom.h" is only used in hijack.c, so will comment out.
+"asm_ipc_defs.h" is used.
+ASM_PAGE_MASK is not used. And I don't know what it does.
+** From entry... labels? EBX             = 0x00
+Just replaced the original with that in calling.h. calling.h also lays out the stack calling conventions.
+** Setting up macros / defines? SAVE_ALL, RESTORE_ARGS etc.
+I don't know if SAVE_ALL should be a #define or a .macro. For 32, it was a .macro, but Gabe changed it.
+I'll try SAVE_ALL as a #define
+What is this "CFI_REL_OFFSET"? - An assembly directive... saves register to an offset of the CFA register. I don't know what the CFA register is.
+I will not use it, since Gabe didn't seem to use any directives. Maybe they are not available in composite?
+They are "Call Frame Information" directives that I am seeing everywhere. I will assume that they are safe to ignore.
+LOAD_ARGS vs RESTORE_ARGS? - load seems to be able to take an arbitrary offset, doesn't mess with CFI
+** Compiling / Testing
+I'm still a bit foggy on what the purpose of these calls are... but I know what they should do, so I'll try to test them.
+Maybe just write a bit of code that calls them, and then see what happens in gdb?
+*** Compiling
+Just trying to compile, and having troubles. Doesn't like the '\'s, and the #define functions... Maybe Gabe uses a different compiler.
+Maybe the #defines are not being pre-processed out.
+Well, I can't compile Gabe's code anyways. Maybe gcc? gas?
+Use gcc. I need to figure out how to get all of the includes working. Makefile time (synonymous with "shoot me in the head time").
+What the heck is going on with these makefiles?
+Soo... I don't... I hate make. And it's a problem with trying to include kernel headers. I'm just going to get rid of the includes; I don't think I need any of them yet.
+gcc vs as problem: I'm getting this error, but only with gcc: (.text+0x20): undefined reference to `main'
+gcc just needs a main label, which is declare globl. See my nifty hello world program.
+*** Testing
+Alright, finally, I can test those save and load #defines. But how?
+Put a value into a clobbered reg (%r8 for example), call save, clobber it, restore and check.
+My test program does not work.... programmer error.
+
+* Thu Aug 16 11:01:52 EDT 2012
+** Testing my stack manipulation calls
+*** jmp problem, actually addressing incorrectly
+There is an error in my program, the 'jmp' command is not doing what I expected it to. In fact, it is not jumping.
+I'm going to make a minimal version to test it, and if that does no elucidate the issue, I can post to StackOverflow.
+The problem is not with 'jmp', but with how I am setting up the data. Printing does not stop with the first line.
+Actually, the .data section was perfectly fine. The problem was with addressing the labels. "$label" gives you the address, which is fine for the string location, but gives you a giant number for the length value. Use "label" to place the value at that address (see jmp_test.S for an example).
+*** Next problem... SAVE_ALL and RESTORE_ALL do not work.
+Not sure why.
+Great. Now I have confirmed with GDB that SAVE_ALL and RESTORE_ALL don't work. Maybe they aren't being preprocessed?
+Maybe the #defines are being treated as comments?
+Apparently those '\'s were very important. And they can not have any characters after them.
+Now the registers seem to be saved, but maybe not read back correctly.
+The stack point (%rsp) is not changing by the amount that I calculated it should be... I must have my commands wrong again. Time for another test program.
+*** fuck.
+First example program works okay. In GDB make sure to do the 'tui reg general' command right before stepping through.
+Looks like my syntax is correct... I am using subq correctly.
+What the bloody hell is going on here? I'm just going to get rid of the #define for a moment and copy and paste it all.
+Works fine with the code just expanded in... Something must be wrong with how the defines are done.
+They are only moving the stack 6*8 bytes, so only SAVE_REST is running?
+I replaced SAVE_ALL with:
+SAVE_ARGS
+SAVE_REST
+And it just bloody skips over SAVE_ARGS. What gives?
+It was a missing '\'.
+
+** What is next?
+Moved the #defines to a header, calling.h
+
+* Fri Aug 17 13:21:03 EDT 2012
+Continuing to port kern_entry.S to x86_64. Will likely have to look things up line by line.
+I neglected to bring my charger, so I'm going to try to write it blind here (no compiling)
+New code starts at 84. I will skip lines which are comments / whitespace
+
+| Line # | original                                   | x86_64       | Notes                                                                    |
+|--------+--------------------------------------------+--------------+--------------------------------------------------------------------------|
+|     84 | .data                                      | .data        |                                                                          |
+|     85 | .align 16                                  | .align 16    | I don't know why, but from what I've read it should be fine              |
+|     93 | .text                                      | .text        |                                                                          |
+|     94 | ALIGN                                      | ?            | These are defined in the generated asm_offsets.h                         |
+|     95 | ENTRY(sysenter_interposition_entry)        | ?            | Not clear. asm-offsets_64.c does the actual gen. gets the                |
+|        |                                            |              | offset into a struct? Is align set to that?                              |
+|     96 | movl TSS_sysenter_sp0(%esp),%esp           |              | No idea. set sp to the TSS?                                              |
+|    110 | cmpl $((1<<COS_CAPABILITY_OFFSET)-1), %eax | same? cmpq?  | Check if it is a cap_inv                                                 |
+|    111 | ja composite_call_ipc                      | same         | jump if above (cap_inv). Will need ipc.S (has the label)                 |
+|    112 | je composite_ret_ip                        | same         | see above                                                                |
+|    114 | cmpl $((1<<COS_SYSCALL_OFFSET)-1), %eax    | same? cmpq   | see 110                                                                  |
+|    115 | ja cos_syscall_thunk                       | same         | was a composite syscall. label in same file                              |
+|    117 | SAVE_ALL                                   | same         | Implemented! In this case it is a linux syscall                          |
+|    118 | pushl %eax                                 | same? pushq? | Need to check about this long vs quad thing. l = 4, q = 8?               |
+|    119 | call hijack_syscall_monitor                | same         |                                                                          |
+|    120 | addl $4, %esp                              | addq? 0  4 8 | I need to see why 4 is added (pushl $0 in SAVE_ALL?)                     |
+|    121 | RESTORE_REGS                               | RESTORE_ALL  | His defines have different semantics than mine                           |
+|    122 | normal_syscall:                            | ?            | Not used anywhere                                                        |
+|    125 | pushl $0                                   | same?        | space for get_TSS (in hijack.c) to return the tss (see 130)              |
+|    126 | SAVE_ALL                                   | same         |                                                                          |
+|    127 | movl %esp, %eax                            | same? movq   | This is how we pass the struct pt_regs* to get_TSS                       |
+|        |                                            |              | Need to check pt_regs!                                                   |
+|    128 | call get_TSS                               | same         | double check hijack.c                                                    |
+|    129 | RESTORE_REGS                               | RESTORE_ALL  |                                                                          |
+|    130 | popl %esp                                  | popq?        | get the TSS pointer                                                      |
+|    131 | jmp *(cos_default_sysenter_addr)           | ?            | Can't find label. jmp * may not be supported.                            |
+|    136 | cos_syscall_thunk                          |              | Loads something into %fs before calling composite_make_sycall (in ipc.S) |
+|        |                                            |              | Do we even have %fs?                                                     |
+
+* Fri Aug 24 15:14:05 EDT 2012
+Time to start getting at the meat of kern_entry.S
+** Trying out my notes from a week ago.
+Wow, I didn't get very far, did I? And it is all questionable.
+** What about ipc.S
+Check on pushl vs. pushq, and cmpl vs cmpq.
+* Sat Aug 25 12:45:48 EDT 2012
+** Working on ipc.S
+Will use the suffix 'q' instead of 'l'. This should specify quadword (64bit) operations. Should be fine.
+As far as I can tell, I should be fine just changing commands to 64bit by setting the suffix to 'q',
+and updating the registers.
+I need to be on the lookout for instructions that may have side-effects.
+It is not necessary to take advantage of the extra r8-r15 registers.
+** Memory Segmentation
+It looks like I'm going to need to understand this for the next two lines.
+There are a few special memory segment registers, such as FS, GS, SS (stack segment).
+Memory Segmentation is an early (286ish) way of providing memory protection. Each process is given a "segment" of the memory (a range of valid address) which it can then use.
+This was replaced by Virtual Memory, which maps a process' memory to actual memory transparently.
+Segmentation was kept around, but not really used (set base to 0, limit to 2^32). 
+x86_64 removed this backwards compatibility, but apparently added it back in later for some processors?
+*** movl $(__USER_DS), %edx ;\ 
+__USER_DS is the user level data segment
+*** movl %edx, %fs          ;\ 
+What is "%fs"? A segment register apparently.
+Can't move constants into a segmentation register!
+
+** segment.h
+asm\segment.h is where __USER_DS is defined. For 32bit it is (15 * 8 + 3) and for 64bit it is (5 * 8 + 3).
+The difference comes from the structure of the GDT (Global Descriptor Table, a per-process (?) structure that keeps tracks of things like, well, memory segments).
+*** almost sent this to Gabe... will track him down later.
+This chunk of code is used to transition from Composite kernel mode to Composite user mode, for example in order to complete a Composite system call.
+"pushl %edx" and the following "popl %edx" just preserves the value in %edx. 
+"movl $(__USER_DS), %edx ---- This is where I get confused. __USER_DS (defined by linux in asm/segment.h) is the location in the GDT the address for the the user data segment starts at. Combined with the next line we see that this is then moved into %fs, a segment register.
+
+But the GDT is a linux data structure. Wouldn't it just be the same for everything in Composite since Composite is a process inside of Linux? So the purpose would be to restore %fs? Why wouldn't %fs be clobbered some times and not others? What is changing %fs in the first place?
+Actually... maybe not a linux data structure... I give up.
+
+* Mon Aug 27 10:24:09 EDT 2012
+** RET_TO_USER
+I am spending way too long on these five lines of code. I can not seem to find much use of %fs in the x86_64 linux code, so I'm just going to try ignoring it for now. Hopefully it will not bite me in the ass.
+#define RET_TO_USER .... will now be #define RET_TO_USER RET_TO_USER_NOSEG
+** THD_REGS
+I'm going to write some example code to test if, as the comment says, the value really is that offsetof. /kernel/include/thread.h has the struct thread.
+Tested in both 64 and 32, offset is 8 in both (I am sane!)
+** composite_call_ipc
+cdecl? This is the function calling convention. What is it for x86_64? Do I need to change the registers used?
+I'm looking into the System V AMD64 ABI, which should be what is being used. Not certain how this is actually used.
+The assembly is calling a c function in /kernel/inv.c, so it must be for that... why assembly at all?
+* Tue Aug 28 09:46:24 EDT 2012
+Still working on this crap. I think I have it figured out:
+Wait... no I don't. But here goes anyways:
+inv.c has the c implementations of the composite syscalls, each labeled COS_SYSCALL
+COS_SYSCALL is a macro for __attribute__((regparm(0))), which specifies that all of the arguments will be on the stack.
+ipc.S calls the composite syscalls in inv.c, after setting up the registers and stack correctly
+kern_entry.S calls the functions in ipc.S (See note about ENTRY below)
+hijack.c sets up (through hw_ints.c/h) the interposition of the composite syscalls
+Do do this, hijack.c messes with the MSR, which I will need to revisit.
+cos_component.h has a comment describing the composite syscall process.
+I think that cos_component is compiled in with each component, which is how it can access a components id...
+ - Don't actually know... check into this
+** ENTRY
+#define ENTRY(x)    .text; .align 32; .proc x; .globl x; x: 
+.text
+.align 32 - data will be aligned % 32 bytes
+.proc x - gnu as ignores this directive. 
+.globl x - x has global scope
+x: - a label to jump to
+
+* Thu Aug 30 14:41:24 EDT 2012
+I need to figure out the semantics of push. Hopefully they have remained the same. Then figure out the component id thing
+** push, pop
+First decrement, then write. Pop is read, then increment.
+** Taking a new tack!
+Talked to Gabe, and he has me pointed in a new direction.
+I need to start with making a small module.
+Then, the module should interpose itself in a similar to seen in hw_ints.c
+Next, support composite invocations.
+
+* <2012-08-31 Fri 08:19> Module
+I have a "Hello World" module now in /JamesTest/newModule
+** Interpose on system calls
+hijack.c defines the init and cleanup functions, asym_exec_dom_init and asym_exec_dom_exit.
+I'm making a new module that only tries to interpose on syscalls. hw_int_init and hw_int_override_sysenter.
+** /proc/aed
+What is make_proc_aed?
+/proc/ is a linux pseudo-file system for kernel data structures. Each process has a folder, named /proc/[pid]
+That's pretty cool. Each process has a ton of files such as "sched" and "maps" which have a lot of info about running process
+There is even a symbolic link, cwd, which is that processes current working directory!
+Back to task: I have no idea... emailing Gabe.
+** hw_int_init
+Not a light function. Will need to understand what an idt is.
+*** IDT - Interrupt Description Table
+This makes sense, just a array of interrupt vectors. Their index is the interrupt number.
+Lowest 32 are reserved for the cpu. Up to 256.
+I think 80 was the old syscall one: "int x80"... wait... is that 80 in hex then? Doesn't matter, now there is sysenter
+There is a register that holds the base address of the array, idtr, which is accessed with sidt and lidt instructions.
+SIDT - stores from the idt to the location in the first operand.
+LIDT - loads from the operand into the idt
+Okay, I'll just try to read the location of the idt.
+
+* <2012-09-02 Sun 14:15> Syscall Interposition
+Alright, let's interpose on syscalls! Figure out idtr... 8 bytes address, 2 limit
+** inline assembly
+The format for inline assembly is:
+  asm("instruction template" : output : input : clobbered registers);
+So you can use c variables inside the assembly instruction. Kinda like printf()
+%0 denotes the first value, %1 the 2nd, and so on.
+Because of this formatting, registers need to be referenced like: %%rax, instead of %rax
+** /arch/x86/include/asm/desc_defs.h
+This is where we see "struct desc_struct" defined. For x86_32 there is only one type
+For x86_64 there are 2, all 16 byte: Gate (interrupt?) and LDT / TSS
+I'm not sure which I should use.
+** attribute __packed__ ?
+** Working version?
+I think that I have it working, but I could be completely wrong. My module prints out the address of the idt,
+which looks like: ffffffff816d4000
+That seems like a suspicious number. I'll try to read the first entry, and see what happens.
+Well, I can print out the address of the first interrupt (or its offset?). And the reserved bits are infact 0.
+
+* <2012-09-03 Mon 12:04>
+Apparently that is not the way to go about it. I need to look into syscall and sysret. 
+Composite just writes to the Model Specific Register to change the system call entry address.
+
+* <2012-09-04 Tue 11:04> Syscall Interposition
+Yesterday was a wash. Trying again.
+** wrmsr(MSR_IA32_SYSENTER_EIP, (int)handler, 0);
+I need to find where this stuff is actually defined. kernel.h is included, which in turn includes a ton of headers.
+There is actually a /arch/x86/include/asm/msr.h
+*** wrmsr
+A macro for the wrmsr instruction in x86. MSRs are 64 bit. wrmsr writes to the register specified by ECX.
+EDX becomes the high order bits, and EAX the low. For 64bit, the instruction is the same; all regs are treated as 32bit.
+*** MSR_IA32_SYSENTER_EIP
+This is and architectual register listed in the Intel docs. Actually defined in /arch/x86/include/asm/msr-index.h
+It looks like I am not going to have to change anything, given the instruction semantics and the way the linux headers handle it.
+** Testing it?
+Am I just going to brick my system?
+Okay, need to write the actual handler. Current one is in kern_entry.S
+Made a very simple on in kern_entry64.S... I don't know how to compile it all together.
+Where is cos_default_sysenter_addr defined?
+** cos_default_sysenter_addr
+This, is of course, first read from the machine specific register. I need to test this first.
+In my kern_entry code I can perhaps jump to it.
+Also, I may need to change the wrmsr code so that it uses both of the address args, since the address should now be 64bit.
+** Testing
+So... the value read was 0. That seems incorrect.
+Maybe this whole syscall vs. sysenter thing is to blame.
+** syscall vs. sysenter
+syscall/sysret is the new AMD format (used in x86_64).
+sysenter/sysexit is the Intel format.
+Switch to MSR_LSTAR (or should it be MSR_STAR?)
+The address read is: 81002aa0:ffffffff 
+Something is probably wrong with the low order bits.
+Printed them out backwards, ffffffff is probably the high order bits.
+** Writting to it.
+This may be bad. Just try writting to it and resetting.
+Segfaulted, had not changed back to MSR_LSTAR (from MSR_STAR). At least it didn't brick.
+Well, can't remove the module. Back a snapshot anyways.
+Can read from it, and write the same value back.
+Next I tried to write a new value, and then change it back soon after. Bricked.
+I'm going to try reading it with the assembly instruction instead of the linux macro.
+I got the same address with the assembly version.
+** msr-tools
+There is a package (sudo apt-get msr-tools) that has a tool to read MSRs. rdmsr.
+Sanity check, here I come.
+Well, except the tool doesn't work... I need to figure out if I configured the kernel with CONFIG_X86_MSR
+** On infrequent, rare occasions I get this odd feeling that perhaps I actually do know what I am doing.
+My kernel was not configured with CONFIG_X86_MSR, so I set it to =m, and remade my kernel.
+Only took one try.
+** sudo rdmsr 0xc0000082 
+ffffffff81002aa0
+That, you may notice, is the value my code was originally producing. That much is encouraging.
+By why didn't writing work? It's late; I'm going home.
+** wrmsr
+This time I'm going to write to the msr, but will not try to printk.
+The thinking is that printk might be triggering a syscall. Results should be interesting.
+Alright, snapshot and give it a go.
+Holy crap, it worked!
+** kern_entry64.S
+Let's see if I can hook in, and not brick the system.
+Spent a ton of time trying to get it compiling correctly.
+Should have read kernel make documentation to start with. But it links happily now.
+obj-m := name.o // make a module named name
+name-objs := file0.o file1.0... // name.ko is composed of these files.
+Time to stop.
+
+* <2012-09-05 Wed 16:16> Kernel Stack
+Compiles and is happy. Time to try to write my syscall handling code.
+Getting the casts correct. This low / high address thing is a pain.
+Heck yeah! Can now interpose my code in the syscall path! Without bricking. Pretty easy actually.
+** kern_entry64.S
+Time to rewrite it.
+*** movq TSS_sysenter_sp0(%rsp), %rsp
+Set the stack pointer correctly?
+TSS_sysenter_sp0 isn't in composite code, it's from linux. But only the x86_32 specific code.
+It is where the TSS (Task State Structure) is offset iin the sysenter stack. Perhaps I should look at the syscall stack instead.
+Gabe stopped by. He basically said "Don't Panic" and warned against "ladder anxiety (starcraft)".
+
+* <2012-09-06 Thu 10:07> Kernel Stack
+** Getting a Stack in the syscall
+The TSS line is throwing me off. 
+I'm going to check how linux goes about syscalls, specifically if I need to do anything to set up a stack.
+Looks like syscall saves %rsp, and then reads the location of the kernel stack:
+ movq    %rsp,PER_CPU_VAR(old_rsp)       
+ movq    PER_CPU_VAR(kernel_stack),%rsp 
+Actually, do I need the kernel stack? Can I just stay in the user space stack?
+I'm going to try ignoring it. If problems occur, then I know where to start looking.
+** composite_make_syscall
+Ignoring "thunk" for now. Components will not be able to make linux calls.
+In ipc64.S
+Gabe's code uses %ecx, but syscall uses %rcx to store the old %rip (instruction pointer)
+I should probably just save %rcx on the stack, and then restore it right before sysret.
+Let's see if I actually have a stack available.
+Wait, that won't work. The calling code will destroy %rcx. I should change the code in cos_component.h
+Talked to Gabe, he helped with those %rsp related lines
+*** swapgs
+A x86_64 instruction that takes care of giving us the kernel segment instead of the user space one.
+Needs to be called again to swap back before exiting call.
+*** movq %rsp,PER_CPU_VAR(old_rsp); movq...
+Now that we have access to the kernel data segment (swapgs), we can save the user stack pointer and get a handle on the kernels.
+To get "old_rsp", you have to include <asm/percpu.h>, and use DEFINE_PER_CPU(unsigned long, old_rsp);
+Maybe I should use a different name... I'm not sure if it will overwrite the old_rsp in the linux kernel.
+Odd, you don't have to do the same to use kernel_stack...
+*** Test the stack
+I want to test that I can actually use the stack.
+Added test_function to enter.c, will call it from kern_entry.S. This way I can printk.
+The function looks funny because I have to make sure it doesn't get stuck in a loop on account of the syscalls made by printk.
+Who bricks systems? This guy. Not funny looking enough I guess.
+Twice. I'm doing something incorrectly.
+It appears to be my code that pushes and pops to the stack. I'll try it in a user level program to see if it works.
+Works in userland.
+I'm an idiot. I was clobbering registers. Just used the SAVE_ALL and RESTORE_ALL macros from calling64.h
+Bricked.
+Bricked.
+The problem is with trying to call my c test_function. I'm going to find an example for the syntax.
+I'm just going to write a program that calls a function in another, and compile one with -S
+Alright, that's done. I see how gcc does it. Now, hopefully it won't brick again.
+That was it. Syntax is simply: call name_of_function
+NOT: call *(name_of_function). That's what I get for just copying code.
+Great, I can manipulate the kernel stack and call out to a c function!
+*** Null system call
+Back to this.
+Will I have to ensure that swapgs is always called before returning?
+
+* <2012-09-07 Fri 11:19> cos_syscall
+Back at it.
+I think that I'm just going to push %rcx to the stack (has the return ip) before continuing the syscall.
+I need to do the whole stack swap thing anyways.
+calling64.h now has macros for getting the kernel stack and switching back to user (takes care of the %rcx problem too).
+Syscall code will be in ipc64.S, can now compile that in.
+** Calling my syscall
+Fucking syscalls, how do they work?
+I need to have a piece of composite working so that it can actually try to make a syscall.
+Compiling everything (is not the way to go but it) reveals some bugs I would need to deal with later.
+*** cos_component.h:439: warning: cast from pointer to integer of different size
+cos_argreg_buff_intern(char *buff, int sz) used COS_IN_ARGREG, which had a cast to an int from a function that returns a pointer.
+Changed cast to unsigned long.
+*** %rcx
+I need to remember that I HAVE to change the calling conventions for composite syscalls and ipc. %rcx can not be used.
+This is because syscall clobbers it. No way around that for now. Pushing it to the stack after the call is made obviously won't fix things.
+*** c_stub.S
+This is the next file to have problems while trying to compile.
+It is a short file, but I'm not going to try to convert it yet, since it is used only for ipc (as far as I can tell).
+Putting into Todo. Time to find a better way to invoke my syscalls.
+** Calling my syscall, less distracted version
+Well, there are a bunch of examples in src/components/implementation
+I'm going to make a new one in src/components/implementation/no_interface/ ... since I don't care about interfaces yet
+I should make the hello component in my 32 bit verson first.
+* <2012-09-08 Sat 15:15>
+I forgot that when I built that kernel (32 bit), I neglected to build any networking drivers.
+I should have rebulit the kernel, but instead I just restart the machine when I need to get it only (which shouldn't be often).
+Anyways, it's too complicated to try and get any of the simple examples working. The complicated ones work great, but the simple Hello World one is deprecated.
+I should be able to build a much simpler one. I just need to take care of cos_component.h.
+** cos_component.h
+I don't understand the clobber list Gabe has. Just clobber everything?
+In x86_64, syscall will clobber %r11 (for rflags) and %rcx (for the old instruction pointer).
+Just like in x86_32, %rax specifies the syscall and is used for the return value.
+I am only putting %r11 and %rcx in the clobber list. I guess it wouldn't hurt to put more.
+
+* <2012-09-09 Sun 17:20>
+Time to get something compiling and working.
+
+* <2012-09-10 Mon 12:57> cos_syscall
+Great, lots of work done yesterday.
+I have some code almost building (just a null syscall)
+** cos_component_information
+Holds information about the component I take it. I guess I should fake this for now, since I'm not really building a component.
+Defined in kernel/include/shared/cos_types.h with many of the core data structures.
+cos_comp_info is external to cos_component.h. It must be a variable in the component that is making the call.
+** cos_component.c
+Shit! Didn't realize that there is a cos_component.c...
+I don't quit get it. Looks like it would be something that one would extend or inherit from in an OO lang. But this is c.
+How the bloody hell does this work? I don't see where cos_comp_info is created or stored. Except in cos_component.c, but I don't see the link between that and the components.
+I'm just copying all of cos_component.c into my hello component. Seems reasonable.
+Had to comment most of it out. Test run!
+** Null syscall
+It works, kinda. My test function was called... right before a trace was executed. I don't know why.
+I think maybe the problem lies in saving %rcx and then bringing it back. I'll much with my COS_EXIT macro (is the code even reached?)
+Bricked. Maybe I should try a different method of debugging.
+Bricked. Sigh.
+Do I ever do a return call?
+I'm adding more test functions.
+I don't see where in Gabe's code he calls a return instruction... but he does set interrupts again.
+For fucks sakes. He does call it. At the end of a macro. But I read it as a comment to the code.
+> sti ; sysexit
+Please don't brick.
+Merely a segfault!
+** seg-what?
+Dammit, I can't print in my "component" until I implement that functionality.
+I don't actually know if that's true... could I build it with stdio?
+I was able to include stdio.h. Right now I don't really have components, just programs that call into custom syscall code.
+Will gdb help at all? A bit. Still confused.
+The problem must be on returning, because the test functions are executing just fine. Maybe I am screwing up the stack?
+** printing registers
+I am trying to write a function in entry.c that will let me print out a register value.
+Now I get a trace. Awesome.
+Dammit, I know what I need to do: write an example program and see what the syntax looks like.
+I am having trouble getting my damn example program linking.
+Fixed. I was making it too complicated, trying to compile each piece separately.
+First arguement is passed in %rdi, so I can just move the register I'm interested there first.
+** %rip
+Time to see if it is the %rip that is getting clobbered.
+This is going to brick it, I think.
+Bricked. I'm psychic.
+No, wait, just stupid. Making calls to c code that prints in the syscall path will always brick.
+%rip gets saved to %rcx with syscall, and restored from %rcx with sysret
+As far as I can tell, That much of my code is working: The same address is printed.
+Haha. If I try to print the register twice, I get something different. %rcx gets clobbered by my call to pring. Good to know.
+It looks like the problem isn't with %rip, but with %rsp:
+segfault at e17b6bdc ip 00000000004004d6 sp 00000000e17b6be0 error 6 in hello[400000+1000]
+** %rsp
+Can't get a handle on this.
+Before call: %rsp > 0x7fffffffe1e0
+Still before call (in header): 0x7fffffffe1d0
+In the kernel: 0xffff88002ab53fd0
+On segfault:                       0xffffe1d0
+Okay, it looks like the stack pointer is losing high order bits:
+Before:       7fff21fdb3e0
+SegFault: 0000000021fdb3e0
+All but the lowest 8 half bytes... so the lower 32bits.
+What about the higher?
+It's not the COS_ENTRY and COS_EXIT methods, they seem fine. It must be sysret
+** sysret
+It must be trying to return to 32bit mode, not 64bit.
+sysretq
+The problem was sysret had an "operand_size" of 32bits, so it was returning to compatability mode and thus ignoring the upper 32 bits.
+I couldn't find anything about setting the operand_size (gcc flag? Is it in the GDT? Does the CS or SS have anything to do with it?).
+Then I just tried sysretq on a whim, and it worked. I'm going home.
+** housework
+Back at it. Let's see if I can get print working.
+But first a commit. And maybe I ought to do a quick backup.
+Commited and backed up.
+Battery at 85%. This is intense.
+** %rax
+Let's see if we actually have the correct value being passed in %rax.
+It should specify the cos_syscall.
+Great, first it is f8000, then 30, then 2d. Apparently %rax gets a bit clobbered.
+f8000 might be right though. Should be d31, but shifted.
+f8000 is correct, see /kernel/include/asm_ipc_defs.h
+Great, it is now (removed the calls to c code for debugging)
+And we are shifting it over correctly.
+** call *cos_syscall_tbl(,%eax,4) 
+Unfamiliar with the syntax.
+cos_syscall_tbl is in /kernel/inv.c, an array of function pointers to the syscall functions.
+I don't have the kernel yet... should I? I could add more junk into entry.c, but it's getting a bit ridiculous. It can't all be in a module.
+So, I copied inv.c over, but I don't know how to go about compiling it.
+There is not Makefile in the kernel folder. It does not appear to get built.
+Of course, it is compiled into the composite module. I don't know why I thought it wouldn't be.
+Compiling. And a segfault and trace.
+Ha! I knew it, had to change the 4 to an 8!
+NULL SYSCALL achieved! I'm out. Good night.
+
+* <2012-09-11 Tue 10:00> cos_syscall
+Time for the print syscall, which means I can get ride of my crappy code. But first I have to figure out how to pass arguments.
+Shouldn't have to change the code in inc64.c
+** calling conventions
+The registers are all kinds of messed up. I need to figure out what the new calling conventions are.
+Focus.
+Added checks for IPC call and return, just for sanity's sake.
+Confirmed that %rax has the right value, so the problem shouldn't be with the syscall array of function pointers.
+Okay, I have confirmed that the problem is in fact with the register passing.
+** registers
+You can not specify the new registers (%r8-%r15).
+I'm going to see if %rdx is actually passing the spd id
+That would be a giant NO.
+** %rdx / spd id
+Alright, that works now. Just had to change which registers are used in cos_component64.h and in ipc64.S.
+Actually, I'm not sure about the code in ipc64.S. It works without it, which makes me wonder if it is even needed.
+I guess we'll see with the print syscall
+** cos_print
+I think I need Gabe on this one. The arguements are being passed just fine. The problem seems to be reading the user memory from the kernel.
+Hmm.. Something is wrong with Gabe's code. I am able to read from the memory.
+The problem is with writing to the memory, not the read. Will change to only read the string.
+
+* <2012-09-12 Wed 08:53> IPC Call
+Cos_syscalls work! At least print and null do. There may be some problems with registers for the 3 argument ones.
+Now sure where to start with this. I do have a component... maybe I will try to do a fake IPC call.
+I already have the code in kern_entry64.S set to notify when this happens.
+I think that first I am going to have to actually implement the framework that components depend on. Then I can go about testing the IPC call.
+** Support Components
+There is a ton of stuff in cos_component.h. I'm not really sure what exactly I need.
+ipc_walk_static_cap has a lot to it as well. Including the following structs: thd_invocation_frame, spd, invocation_cap
+What about cos_loader?
+Example of a component that invokes a capability? Ping pong example?
+** pong
+Very simple code. I will have to look into how the stubs are generated by gen_client_stub.c
+I'm not quite understanding how gen_client_stub.c works. But it will have to be changed.
+I must not be looking at code generated be gen_client_stub.c. Not going to worry about it. Seems that many stubs are hand written.
+cos_loader.c is a beast. Has functions like create_invocation_cap.
+I think I am going to have to take a different tack. Instead of re-writing pieces of everything, I need to only re-write the bits that are neccessary.
+What is the minimum for pong? No, that is too much.
+First the kernel side of the IPC path.
+** ipc.S
+kern_entry.S jumps right to ipc.S:composite_call_ipc on an IPC call
+
+* <2012-09-16 Sun 17:11> Merge
+I need to get cos_loader compiling. And merge my current code in with the current base.
+** Merge
+*** inv64.c
+These are all of the syscalls. I can probably merge it easily back into inv64.c,
+maybe with a few ifdefs for the inline assembly parts.
+**** print_regs
+This is obviously a problem. I also need to update the pt_regs struct.
+Interesting, dietlibc uses a similarly named struct. Maybe they define a version for 64 bit.
+dietlibc has many defined, but none for x86_64. Does it support x86_64? Current version says it does...
+The new version supports x86_64, I should ask Gabe about upgrading.
+*** ipc64.S
+
+** cos_types.h
+Let's looke at cos_types
+
+* <2012-09-17 Mon 17:00> Merge
+** dietlibc
+I don't think that there is a need to actually upgrade to version 0.32 (current is 0.29).
+Unless I find that composite code uses the arch. specific parts of dietlibc... hmmm... why use it at all? I should just ask Gabe.
+Why would pt_regs be defined twice?
+** pt_regs
+This struct is used in debugging code it looks like. Architecture specific.
+I need to figure out how to best change it.
+Used in fault_regs.h, which uses enums from kernel/include/shared/cos_types.h
+There is a lot that needs to be looked into.
+It doesn't follow the pt_regs defined in /lib/dietlibc-0.29/include/sys/ptrace.h: it adds fs, gs, changes the names, and uses all longs.
+I don't see why they have the same name to begin with anyways.
+I'm not sure if my changes work.
+** inv64.c
+This needs to be merged.
+So much stuff! Every syscall needs to be updated, and a bunch of helper functions.
+Not to mention all of the structs.
+*** struct thread
+Defined in /kernel/include/thread.h
+Shit. Changing this is going to effect ipc.S which makes assumptions about offsets.
+May not matter, because the offset of struct regs does not change, just the regs themselves (any anthing after).
+I'm lost.
+
+* <2012-09-18 Tue 14:32> Merge
+I need to get this taken care of today.
+Maybe I should start back at the begining. Throw ifdefs around everything and have at it.
+Should all of those syscalls use longs instead of ints?
+** kern_entry
+Trying to merge kern_entry.S files. Creating a new calling32.h.
+Okay, it should work, but something is going wrong with the build.
+I am getting undefined symbols that should be defined.
+** make init
+I'm just going to try to compile and see if I can get it all working.
+*** c_stub.S
+A bunch of operand errors. Might be easy enough to change right now.
+Nope. Will need to fix for ipc. Messes with the stack.
+I can't figure out how to get make to skip over the code. I'm trying an ifdef, but can't seem to pass it in (using "-D flag")
+*** Makefile
+What the hell? I'm going to try to make a test program / makefile. This is really annoying.
+My example program works just fine. It must be something with my understanding of the Makefile
+I needed to edit /components/Makefile.comp
+*** cos_asm_upcall.S
+Appears to be needed for IPC... maybe returning from a capability.
+Will also have to mess with the code to get stacks working (/components/include).
+**** cos_asm_upcall_simple_stacks.h
+What is #eax supposed to have?
+It is shifted left, and then added to %esp (which is loaded with $cos_static_stack).
+There is one large stack, which is indexed into by whatever %eax has?
+Converting over... we'll see.
+**** cos_asm_upcall_simple_stacks.S
+Maybe there are too many here.
+Wow. Changing that over (not implemented) seemed to allow a lot of other things to be built
+*** s_stub.S
+Seems to be a generated file in every component (or maybe just those that export an interface).
+Will need to find and change the gen-code.
+The code is in cos_asm_server_stub.h, which defines a bunch of macros used by the stubs.
+Also uses the stack code. This is going to be a pain to change over.
+But not now, later. ifdefing out.
+*** cos_component.h
+Damn it. I was putting this one off.
+I don't understand a good deal of what is in here.
+Having compilation problems. The -D flag isn't set for any of the components. Slight problem.
+Well, that's a bastard of a solution: change the c compiler to "gcc -D X86_64" in the main Makefile.
+**** implicite declarations
+Okay, I have no idea where cos_mpd_cntl is defined.
+There are a few declarations that I can not find.
+Maybe they are generated elsewhere? Most start with "cos__"
+Right... in cos_component.h. They are all syscalls. How do I get rid of those warnings?
+*** dietlibc
+It looks like the problem is now that dietlibc has a command not being found... the i386 version. Make issue?
+dietlibc is building correctly as x86_64.
+Had to edit /components/Makefile.comp; changed the DIETBIN variable.
+*** inv.c
+This is the beast. Lots of errors.
+Why hello pt_regs. So we meet again.
+So, still a make problem.
+So, pt_regs is defined in a bunch of places. /kernel/include/shared/consts.h for one, which isn't being used here because it is correct.
+There is also one in the linux kernel, but I think that it isn't being used, because it is also correct (but I could have my kernel configured wrong? seems unlikely since it runs).
+It must be in dietlibc, which doesn't have a similar pt_regs until later versions. I'm going to try to upgrade.
+Nope... that didn't fix it. Maybe it is a Make problem after all.
+Nope, not a Make problem. I need to figure out which pt_regs is being compiled in.
+The problem is only with the non-numbered registers (%r8-%r15 don't have any problems).
+That was it: Must be using the linux header, which lists the non-numbered regs without the r (ax for %rax).
+**** invalid storage class for function ‘brand_execution_completion’
+I don't even know what that error means.
+Missing closing brace.
+Too tired. Finished for today.
+* <2012-09-19 Wed 09:35> Still Merging?
+Back at it.
+** inv.c
+Still a few errors to clean up.
+Should I find a more clever way to select registers? Make a name, like reg_arg0 and then just have one define for mapping it to either %ebx or %rdx (or whatever)?
+This may work for now, but doesn't once we start using the extra registers that x86_64 provides... maybe. We have extra registers so some code may become simpler. It may not be as simple as a mapping.
+Should the spdid be a long? Should the syscalls return long instead of int?
+** Undefined symbols
+It builds now...
+* <2012-09-20 Thu 11:57> I don't know what I'm doing.
+I went back to the old Makefiles, and now things don't build. And there are a bunch of warnings.
+What are all of these implicite function definitions comming from? It's not a problem x86_32.
+** Syscalls
+The problem is with all of the unimplemented syscalls. I should make each just a null call I suppose.
+I've added them all in. Hopefully they will magically work. Should probably be tested.
+** cobj_format.c
+Few warnings...
+Talked to Gabe, cobj works in a similar manner to elf file format.
+Will need to update the load_service to use the correct format (currently something like elf_i386)
+** Git
+Took a very long time to get everything forked over and then pushed in Git.
+Had to shitch from https to ssh, gen some keys, and them to git, and then "ssh-add ~/.ssh/id_rsa"
+That last bit seems unimportant, but trust me, it is very important.
+
+* Useful things
+** find
+> find . -name "*.c" -o -name "*.h"
+> find . -name "*.h" -exec grep -n "pte_t" {} \;
+  -o does not seem to work with -exec
+
+** gcc, usefull flags
+  compile into assembly (no linking) > -S
+  compile into an object file (library) > -c
+  add link / include path > -L / -I (each entry must be with separtate -I / -L)
+  define a variable (same as #define) > -D Name=Value (-D Name is sufficient for #ifdef)
+** GDB commands
+You can add breaks at a label
+> break label_name
+Step next, into, and finish
+> n > s > finish
+> tui reg general
+> frame
+> x 0x_______ (look at the stack pointer)
+
+** git commands
+> git log
+> git show --name-only
+Create a patch
+
+To apply it, try
+> git am --whitespace=fix name.patch
+When that doesn't work:
+> git apply --reject --whitespace=fix name.patch
+Fix the problems (look for filename.ext.rej files)
+Add the modified files, then
+> git am --resolved
+
+Create / Delete branch
+> git branch name / git branch -D name
+Change branch
+> git checkout name
+Merge branch
+> git merge name
+
+** networking
+To restart, run following as root
+> /etc/init.d/networking restart
+** objdump
+  Print out symbol table > -t 
+** org-mode
+Date and Time stamp
+  ^u+^c+.
+** tar / gzip
+tar and gzip a folder:
+> tar -zcvf folder_name.tar.gz folder
+** tmux
+Create Window
+  ^b+c
+Rename Window
+  ^b+,
+Kill Current Pane | Window
+  ^b+x
+Split Horizontal / Vertical
+  ^b+" / ^b+%  
+Scroll terminal / exit
+  ^b+[ / q
+* Todo
+** Look at hw_ints.c
+Change how it inserts the composite syscall code,
+line 140:  wrmsr(MSR_IA32_SYSENTER_EIP, (int)handler, 0);
+** cos_component.h
+Has the system call stubs. Need to change the inline assembly over
+
+** composite_call_ipc
+In ipc64.S
+
+** composite_ret_ipc
+** c_stub.S
+** cos_types.h
+Has some types defined, but then uses some "standard" types. 
+Not sure if it will be a problem.
+
+** debug c print code
+Right now test_print_reg in entry.c clobbers a bunch of registers.
+It would be easier to debug if that wasn't the case. But it may not be worth the effort.
+Could just define a macro to do.
+
+** fix cos_print
+It should make use of the length value, or get rid of it.
+** The rest of the syscalls
+** In ipc64.s:composite_make_syscall
+How come the stack manipulation code is no longer needed? Because I don't clobber registers?
+Will this be needed again? For example, to ensure that an interupt mid-syscall doesn't clobber the regs?
+%rcx may be clobbered by syscall as it is. It's the 3rd argument, which I haven't used yet. I really should check that.
+
+** Stacks
+Check in /component/lib for a bunch of stack management code that will need to be converted.
+
+** dietlibc
+/components/Makefile.comp should select the correct DIETBIN directory.
+Either bin-i386 or bin-x86_64
