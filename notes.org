@@ -813,6 +813,52 @@ Will need to update the load_service to use the correct format (currently someth
 Took a very long time to get everything forked over and then pushed in Git.
 Had to shitch from https to ssh, gen some keys, and them to git, and then "ssh-add ~/.ssh/id_rsa"
 That last bit seems unimportant, but trust me, it is very important.
+** cobj_format.c
+Back to this.
+Adding vaddr_t to cos_types.h. Already there. Going to actually start using it (starting with cobj_format.c)
+Did emacs seriously just start listing the line number as "??". That is helpful.
+dietlibc has a few warnings... that I am going to ignore.
+** bitmap.h
+Seems to only be for 32 bit types. Bitshift warning because WORD_SIZE is now 64 bit.
+Used by cslab and cbuf. Do I need to convert these over?
+** s_stub.S
+Include from src/component/include/cos_asm_server_stub_simple_stack.h is what is actually causeing the problems.
+Needs to be converted over. All assembly.
+Okay, I need to stop. I can't rewrite the stubs files when I don't even have the syscall reintegrated.
+** undefined symbols
+When just building the kernel, I'm getting some undefined symbols in cos.ko. Problematic.
+Things like cos_syscall_upcall. Let's see if we have actually converted kern_entry and ipc.S
+** ipc.S
+Should be building now... but something is wrong. Not seeing my code.
+Makefiles. The module uses kmake instead of make, so I need to figure out how to define a value.
+EXTRA_CFLAGS and EXTRA_AFLAGS
+That did the trick (EXTRA_CFLAGS += -D X86_64)
+Actually, I had a typo. The problem was that I had a modified version of the makefile. I just reverted to the original.
+* <2012-09-21 Fri 10:54> Do I actually need to know what I am doing?
+Time to finish the Merge, and get syscalls working again. Then, move on to IPC.
+** enter.c / hijack.c
+Unfortunately, this was my crap file that I through everything that the module needed into. I need to figure out how to break it up again.
+It's a mix of hw_ints.c and hijack.c.
+I think that it's done... compile?
+Fixed some problems, still a few undefineds.
+** page_interposition_fault
+I can't find where this label is, even in the regular codebase.
+I guess I can declare it in kern_entry.S anyways.
+** Testing
+I should probably go ahead and snapshot this now.
+Well, at least inserting the module didn't blow anything up. Time to test the syscalls.
+Segfault!
+Reached my test function, right before the syscall code in ipc.S
+%rdx looks funny: 00000000ffffffff
+Seg is on the null syscall. Which doesn't exist anymore. But that isn't the problem.
+Okay, makes the syscall... then blows up.
+I was running the wrong test program. The null syscall works. Print does not.
+* <2012-09-23 Sun 09:36> IPC?
+Debuged a bit last night and didn't get anywhere.
+This morning I fixed the problem: I was using the old printk code, which causes problems because it tries to write to the string.
+A problem I had fixed days ago, but had forgotten about.
+
+
 
 * Useful things
 ** find
