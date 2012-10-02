@@ -2,6 +2,7 @@
 
 void main(void) {
   printf("char size: \t %zd\n", sizeof(char));
+  printf("short size: \t %zd\n", sizeof(short));
   printf("s_int size: \t %zd\n", sizeof(short int));
   printf("int size: \t %zd\n", sizeof(int));
   printf("l_int size: \t %zd\n", sizeof(long int));
