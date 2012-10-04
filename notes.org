@@ -1066,12 +1066,78 @@ The problem is with pgd_offset, or maybe it's arguments. It is provided by linux
 I think we should switch the call to pgd_offset_k... assuming that we are interested in the linux kernel and not the composite kernel.
 Hmm... init_mm is now no longer defined in cos.ko. Ah, it is used in the shortcut pgd_offset_k. So, back to pgd_offset.
 init_mm is declared as an extern in linux/sched.h, which is already included in hijack.c. It is defined in a .c file. So my guess is that pgd_offset_k is not intended to be used outside of the kernel. Which, now that I think about it, makes absolutely perfect sense.
-
-
-
+** The plot thickens.
+Seems like kern_mm is being set correctly. I must be something else.
+pgd is ending up null. Maybe the COS_INFO_REGION_ADDR is set incorrectly? It is defined in consts.h
+Hmm... The place to look may be pgd_offset. It expands to: ((kern_mm)->pgd + pgd_index((COS_INFO_REGION_ADDR)))
+Well, the pgd for kern_mm is apparently null. That would explain it, I suppose.
+So how do I fix that?
+** aed_allocate_mm
+This must be failing. printk time.
+Alright. More confused than before. alloc_mm is being called. And it works, at least for the first call to it: mm->pgd is not null.
+On the second call though, it fails. And mm ends up having the same address as the first one. This seems wrong.
+Finally. The aed_allocate_mm function is finishing all the way, but the error code seems to be 0. 
+Wrong.
+Okay, so there is just one call to aed_allocate_mm. And it seems to work just dandy.
+So, the next call, aed_get_mm must be botching the job somehow.
+** aed_get_mm
+But this function is just getting a reference from an array!?!
+GAH! I was dereferencing a pointer in my print statement!
+So I just super confirmed that aed_allocate_mm and aed_get_mm work as expected.
+** pgd_offset
+So. Back to where we started. Something is going wrong with this function. So the COS_INFO_REGION_ADDR must be wrong.
+* <2012-10-02 Tue 13:12> Page Offset
+I don't know what the problem is, so I'm going to read up on it for a bit.
+** 64 bit range
+Never have been so happy to crash my VM.
+Changed #define SHARED_REGION_START from 1<<30 to 0xffff880040000000
+I don't yet have a good theory as to why using the lower address (which should still be a legal address since the can use the lowest 2^47 address and the highest 2^47 address) doesn't work.
+I'm going to try to have it exit gracefully, and see what gets printed out.
+Maybe it has something do with that being where the kern_mm is already mapped. Maybe linux uses the upper address for native 64 applications.
+** Actually
+Something is still wrong. 
+And now it really doesn't make sense.
+** Stepping through.
+mm_struct <- represents the address space for a process. 
+There are a few different memory map structures that composite is juggleing:
+> kern_mm - The is likely just for the composite kernel
+> current - The currently running component?
+> composite_union_mm - Perhaps the mappings for everything that composite is using.
+This would suggest the the problems are not with the offset into the pgd, but if that data was mapped in in the first place.
+* <2012-10-04 Thu 10:53> Into the abyss
+Is that how you spell abyss?
+Spent yesterday on other work and the Fishing School. And setting up this computer.
+Which means I'll now have two versions of this VM. That could get confusing. The code is all in git though.
+So the question this morning is: Do I work on the Page problem or just skip it for now?
+** Disabling the paging system
+Let's skip it for now.
+And..... Seg Fault.
+Something in chk_offsets.c. Better to error here than elsewhere.
+Great... killed something. I can't remove the cos module. Need to reboot.
+** I'm back! Snapshot time.
+At least it is something I actually know how to fix. The defined offsets are incorrect.
+Haven't I changed these all before?
+** gen_client_stub.c UCAP_SZ_STR
+That god-damn:
+  .rep UCAP_SZ_STR
+  .long 0
+It's going to have to arch specific... since we need quads not long.... unless
+Just need to reserve 24 bytes. Doesn't matter if it is done as 6 longs or 3 quads (hopefully!).
+I think that I resolved that in a fashion that won't give too many other programmers splitting head-aches.
+Sigh. Need to restart.
+** Seg Fault!
+Of a different sort. So... yeah, progress. Especially since I could remove cos.ko after the crash.
+cos_loader[9290]: segfault at 0 ip (null) sp 00007fffe64bebd8 error 14 $n cos_loader[400000+d000]
+So... ip is null. That seems bad. cos_loader[400000+d000] seems usefull. 1 gig is where the memory is supposed to start, not sure what happens at 1 gig + 52kb.
+Time to push so that I can use my laptop.
 
 
 * Useful things
+** bash
+Last entered command: !!
+Open a file that was found with your previous find command (
+Last entered arugument: $_
+
 ** find
 > find . -name "*.c" -o -name "*.h"
 > find . -name "*.h" -exec grep -n "pte_t" {} \;
