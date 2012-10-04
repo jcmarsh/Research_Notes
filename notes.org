@@ -1130,6 +1130,23 @@ Of a different sort. So... yeah, progress. Especially since I could remove cos.k
 cos_loader[9290]: segfault at 0 ip (null) sp 00007fffe64bebd8 error 14 $n cos_loader[400000+d000]
 So... ip is null. That seems bad. cos_loader[400000+d000] seems usefull. 1 gig is where the memory is supposed to start, not sure what happens at 1 gig + 52kb.
 Time to push so that I can use my laptop.
+** Debugging seg fault
+The function aed_open seems to exit just fine. I'll leave the checks for when I try to uncomment the kernel page part.
+Talked to Gabe. Debugged with him. Didn't learn anythings. Trying again.
+The code segfaults with the first system call after aed_open.
+Even dies if the aed_open call immediately returns.
+So. The system call path must be messed up when a call from... nevermind.
+The program is being killed because of the "return 1;" instead of 0.
+** spd.c:322?
+Now this is where the problem lands.
+This is a problem for later. First, the current problem.
+** aed_open
+Have to restart again.
+Did a binary search for the line causing the error, and found it! (Because of the return 0s).
+AND I did a sanity check on it, and I am in fact sane. Really.
+What line was it? Well, now that I know, it all seems so obvious:
+** ipc_init()
+./kernel/include/ipc.h:ipc_init
 
 
 * Useful things
