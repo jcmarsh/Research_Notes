@@ -1148,8 +1148,85 @@ What line was it? Well, now that I know, it all seems so obvious:
 ** ipc_init()
 ./kernel/include/ipc.h:ipc_init
 
+* <2012-10-05 Fri 15:44> What is dying in cos_loader?
+** ipc_init
+Actually, ./kernel/inv.c:ipc_init
+  memset(shared_data_page, 0, PAGE_SIZE); 
+  rdtscl(cycle_cnt);
+That is all that the function does. I should probably check that page size is correct.
+PAGE_SIZE is defined in consts.h, and is (1 << PAGE_ORDER), which is the same in the linux kernel (PAGE_ORDER is 12).
+I'm going to test out the getpagesize function provided by unistd.h.
+As expected, PAGE_SIZE is the same on both platforms (4096 bytes).
+So, shared_data_page or rdtscl as the next culprit?
+** rdtscl(cycle_cnt)
+That's it! Probably.
+It is a define, which ends up expanding out to some assembly. I bet it is clobbering something.
+What happens if I just comment out the line? It works! Wait... I've been here before. Sanity check time.
+We've crashed.
+* <2012-10-08 Mon 11:27> Finish IPC
+** rdtscl(cycle_cnt)
+Why are there 3 defined (okay, one is rdtscll)?
+The command, rdstc, stands for read time-stamp counter, or how many cycles have passed since the last cpu reset.
+The 64 bit behavior seems to be very similar to 32 bit, which returns the 64 bit register as EDX:EAX. 64 bit does the same, and clears the highorder bits from RDX and RAX
+/* We cannot use "=A", since this would use %rax on x86_64 */ <- linux source
+That would seem to imply that we can not use "=A"
+This complicates things. I'm going to try writing a test program to make sure I can acutally replace the existing code.
+I'm fairly certain that I am the man. I think I have the code working.
+Hmm... rdtscll works as would be expected: getting the 64 bit value.
+rdtscl only returns the lower 32 bits.
+I'm switching the calls to rdtscll.
+** Still having troubles
+I'm not sure if it is just something that is breaking later.
+Alright, I'm going to forge ahead anyways. Now I am getting a seg fault.
+At the same point that was giving me a problem before (as far as I can tell).
+Is it time for sanity checks? I hate it when my sanity checks fail.
+Crash.
+** cos_init_memory()
+This seems to be having a bit of an issue
+This wouldn't take so long if I didn't have to restart every time I wanted to test something.
+I am begining to suspect va_to_pa, since that function also exists in the code I had to comment out aed_open().
+** va_to_pa
+It's just a hunch.
+Hmm... __pa(va) <- that seems reasonable.
+It's called a few times, but I can't find where it is defined.
+It's a linux function. The function va_to_pa and pa_to_va seems to exist just to cast to a "void *", which should be fine since linux has it return an unsigned long.
+It is possible that I can not call cos_init_memory since I commented out that previous bit that also deals with memory.
+** kern_mm
+Why isn't this working? Do I really want to try to fix it now?
+Where is the pmd? Not a problem earlier.
+How many levels do I have? 2? 3? 4? And how do I check this?
+Hopefully I can just use the value defined in the linux kernel.
+4. We have 4 levels. PAE only uses 3, so I'm guessing that if composite couldn't handle PAE then it definately can't handle 4 levels.
+** 4 level Page Tables.
+I probably need to change the values of things like PGD_SHIFT
+I'm a bit confused.
+Hmm... I have broken everything. But at least now I know what depends on consts.h page table stuff.
+So, cand I just lock the first few levels? Everyon component has the same PUD and PMD and PGD?
+And killed something.
+** Moving on.
+I can't make heads or tails of the page table stuff.
+** Could not create spd
 
-* Useful things
+* <2012-10-09 Tue 10:07> Actually finish IPC?
+Should I start by ripping out SPDs and Memory? Or fixing them?
+GAH!
+I'm not making any progress.
+And crash.
+Okay. Time to get this done.
+Crash.
+** kern_mm = current->mm;
+I'm not sure yet if this was a good idea of a horrible one.
+Hmm.... I will need to change it back later. May have revealed two problems (or one... I'm so confused).
+** pte_t *pte = lookup_address_mm(current->mm, COS_INFO_REGION_ADDR);
+This line appears to not be setting *pte to a correct value, since we fail out if we print it.
+This may explain the problems later on with reaching COS_INFO_REGION_ADDR after kern_mm is set to = current->mm.
+Crash.
+For some reason there is no pmd for COS_INFO_REGION_ADDR. I'm stumped. Going home. Emailed Gabe.
+
+
+
+
+* USEFUL Things.
 ** bash
 Last entered command: !!
 Open a file that was found with your previous find command (
@@ -1196,6 +1273,8 @@ Merge branch
 
 ** inline assembly
 r for any register?
+*** Register Constraints
+=A - in x86_32, this refers to the pair eax and edx, so can not be used in x86_64
 ** networking
 To restart, run following as root
 > /etc/init.d/networking restart
@@ -1283,3 +1362,5 @@ See 9-24
 ** Fix c_stub.h
 I got rid of the whole error code returning thing.
 Also, I probably broke it.
+** Memory management
+Fix vas_mgr and valloc
