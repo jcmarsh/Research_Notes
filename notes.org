@@ -1223,6 +1223,71 @@ This may explain the problems later on with reaching COS_INFO_REGION_ADDR after 
 Crash.
 For some reason there is no pmd for COS_INFO_REGION_ADDR. I'm stumped. Going home. Emailed Gabe.
 
+* <2012-10-10 Wed 13:45> Memory problem
+Gabe replied to my email, and pointed out two functions that I had somehow managed to completely miss.
+** hijack.c:pgtbl_add_middledir
+There are actually a bunch of helper functions like this. I don't know how I missed out on them earlier.
+Used in pgtble_add_middledir_range, which is used in spd.c, So, will probably have to fix this.
+Okay, maybe pmd is supposed to be a 0 at that point. I can't seem to find any init code before it.
+** shared_region_pte[0].pte_low = (unsigned long)(data_page) | (_PAGE_PRESENT | _PAGE_RW | _PAGE_USER | _PAGE_ACCESSED);
+* <2012-10-11 Thu 12:12> Today will be the day
+I'll come back to pgtbl_add_middledir. At the very least, it isn't being called before my problems begin.
+So, let's assume that lookup_address_mm(current->mm, COS_INFO_REGION_ADDR); doesn't fill in pmd.
+Which makes sense, right? COS_INFO_REGION_ADDR is 40000000, which means in a 4 level system... The offset would be 0, the table entry 0, and the middle level 0.
+Am I confusing physical vs virtual adresses? Physical addresses are much shorter than the virtual... at least when the virtual are in the upper partition (0xffff....)
+** shared_region_pte
+Crash. I have no idea what is going wrong.
+** shared_data_page
+This is an array, which should represent one single single page, thus the size of 512 in 64 and 1024 in 32 bit (word size goes from 8 to 4, is 4Kbs (2^12))
+It is declared in kernel/inv.c, and used in hijack.c
+The variable data page is the physical address of the entry which should have that page (may be missing a bit, but at least has the pmd and pte)
+** shared_region_pte[0].pte
+This is no good because it is only saving the pte, neglecting (at least) the pmd. This used to be okay, since in the 2 level page tables, the pgd was know. (now I am hoping that the pgd and perhaps the pud is known).
+
+** pgtbl_vaddr_to_kaddr
+As far as I can tell, this function is working perfectly.
+
+* <2012-10-12 Fri 11:11> Alright.
+Something is going wrong... somewhere. 
+I've re-read everything about page tables, so I think I understand what is going on with them.
+** kern_mm
+I need to figure out why composite is failing at access the shared data page here.
+I'm not seeing it.
+** pte_t *pte = lookup_address_mm(current->mm, COS_INFO_REGION_ADDR); 
+Why is this line (first in hijack.c:aed_open) failing? PGD seems good, PUD is good, and then the PMD is bad.
+Are we failing to map it in properly earlier? Or is it okay....
+"Map it in" doesn't really make sense, does it? Allocated? Why am I so confused?
+After this line, pte = 0.... so why doesn't the error check on it trip up?
+Okay, the check is: if (pte != NULL) then error.
+pte isn't supposed to be anything yet. If it was already in the page table, then the memory has already been allocated.
+** struct_mm
+These structures keep track of the page table for a process (and orther memory bits).
+Hijack.c is manipulating three:
+*** current->mm
+This is the current thread's struct_mm
+*** kern_mm
+This is only supposed to have mappings for the composite kernel.
+Something is going wrong with it's allocation or the mapping of COS_INFO_REGION_ADDR into it.
+*** composite_union_mm
+I'm not sure exactly
+My assumption is that this will have the page table for everything in composite, including the kern_mm
+** data_page
+So, where to we hook in COS_INFO_REGION_ADDR?
+shared_region_pte is set to the pte for shared_region_page. This seems correct.
+Next, memset 0's out the page. PAGE_SIZE is set correctly. yup. 1 << 12 = 4kB.
+data_page is set to the physical address of shared_data_page. Seems correct.
+shared_region_pte[0].pte is set to data_page. Now data_page and shared_region_pte are the same, and related to shared_data_page as well.
+All seems good. I don't see the problem that Gabe was getting at.
+** Placing in pgd.... hm, maybe this is the source of our troubles.
+pgd->pgd = (unsigned long)(__pa(shared_region_pte)) | _PAGE_TABLE;
+I can't believe I didn't see this earlier.
+Obviously, setting the pgd to a pte is cutting out the pud and pmd. Duh.
+Crashed.
+** And we are back.
+So, clearly, I need to start filling in the page tables so that COS_INFO_REGION_ADDR is actually there.
+Alright, I'm making progress. But I'm not setting each level to the correct value.
+I'm setting everything to be the final pte value, which, surprise surprise, is a rather poor choice.
+Killed.
 
 
 
