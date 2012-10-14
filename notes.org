@@ -1289,6 +1289,23 @@ Alright, I'm making progress. But I'm not setting each level to the correct valu
 I'm setting everything to be the final pte value, which, surprise surprise, is a rather poor choice.
 Killed.
 
+* <2012-10-14 Sun 11:11> Page Tables
+First I need to finish pulling from git.
+** Shared data pte
+I'm trying to map in the pte for shared data, but I keep killing the kernel. Restart again.
+Not sure what is going wrong.
+When I walk the page tables looking for COS_INFO_REGION_ADDR, pmd_offset fails.
+I guess this makes sense... I have to map it in.
+** Allocate pages
+Gabe emailed me back, and made some things more clear.
+When pmd_offset fails (or pud_offset for that matter), I need to allocate a page.
+And example of this should be in the spd creation code, since spd's need to allocate some shared data.
+** spd.c:spd_alloc_pgtbl
+I've looked at this code before.
+Okay, after a complicated loop (inv.c:cos_syscall_spd_cntl -> spd.c:spd_alloc_pgtbl -> page_pool.c:cos_get_pg_pool -> hijack.c:cos_alloc_page) we are back into hijack.
+hijack.c:cos_alloc_page() - not the most exciting function, just calls __get_free_pages and then memsets them 0.
+But the page has been allocated. I just need to correct its pmd.
+** pmd
 
 
 * USEFUL Things.
@@ -1429,3 +1446,50 @@ I got rid of the whole error code returning thing.
 Also, I probably broke it.
 ** Memory management
 Fix vas_mgr and valloc
+* Emails
+** <2012-10-14 Sun 15:31> Gabe
+James,
+For all of this page-table stuff, the best way to think about them is from the software structure's perspective.  The hardware requires that the page-tables are laid out a specific way.  So when you look at some code like this, the important thing is to map the code back to what should be happening to the underlying data-structure.  Here's the old article on the initial support for 4-level page-tables:  http://lwn.net/Articles/117749/.
+If the pmd is empty, that means that there is no page table that continues at that point (i.e. the leaf for that address is not a page to be mapped into the address space).
+So, as you said, we need to add in a page middle directory at that location.  After we've done that, much of the previous code should modify that pmd, and will need to change to reflect the fact that we're now mapping 2MB regions instead of 4MB regions for each of the entries in the pmd.  I'd simply make it so that each component uses up two pmd entry so that we still maintain 4MB component regions by default.  Ignoring this annoying 2MB/4MB thing (i.e. the # of entries per page in the page table), I think that a lot of the code will change to making changes to the pmd rather than what is happening in the code now, the pgd.  We're on the same page with this; this is what you said below.
+So how do you get a PMD?  Allocate a page from the Linux kernel (e.g. this is done when you create a spd), and set the pud in the appropriate location to point to the physical address of the page.  Set up the bits correctly in the pud so that the page is "present, and read/writable", and make sure that (initially) the page is zeroed out.  Now we can add entries into that page, and we will be creating ptes that will be set to point to the pages themselves.
+When we create a new spd, we will get a new page table through the normal mechanisms, add in the pud (if required), add in the pmd, and then go from there.  In the current code, we allocate the pgd, and the pte.  That's it.   So there are more page allocations, and they need to be carefully placed into the page tables.
+I'd like to remind you again though, that you don't really need page tables to be set up if you are never switching into the destination component.  For the IPC path, the first draft won't include that.  However, this is a problem we'll have to solve sometime, so if you'd prefer to do it now, that's fine.
+
+Hope that helps???
+
+Best,
+Gabe
+
+On Sun, Oct 14, 2012 at 2:18 PM, James Marshall <jcmarsh@gwmail.gwu.edu> wrote:
+Okay, I think that I am starting to understand the problem. I haven't gotten to dealing with spds yet, because I am trying to fix this line first:
+https://github.com/gparmer/Composite/blob/master/src/platform/linux/modonlyonlyule/hijack.c#L1948
+Here, the pte for the shared region is being placed directly into a pgd, which is not suitable in 64 bit (I think that my system is actually using 4 level tables, but that shouldn't be any more difficult than 3 levels).
+I am able to "walk" the page tables using code such as the following:
+       pgd = pgd_offset(current->mm, COS_INFO_REGION_ADDR);
+        if (pgd_none(*pgd) || pgd_bad(*pgd)) {
+                printk("Could not get pgd_offset.\n");
+                return -EFAULT;
+        }
+        pud = pud_offset(pgd, COS_INFO_REGION_ADDR);
+        if (pud_none(*pud) || pud_bad(*pud)) {
+                printk("Could not get pud_offset.\n");
+                return -EFAULT;
+        }
+        pmd = pmd_offset(pud, COS_INFO_REGION_ADDR);
+        if (pmd_none(*pmd) || pmd_bad(*pmd)) {
+                printk("Could not get pmd_offset.\n");
+                return -EFAULT;
+        }
+        pte = pte_offset_kernel(pmd, COS_INFO_REGION_ADDR);
+        if (pte_none(*pte)) {
+                printk("Could not get pte_offset.\n");
+                return -EFAULT;
+        }
+
+From how I understand it, I should then just be inserting the pte into the pmd (instead of the pgd). The problem is that when I walk the page tables, pmd_offset fails.
+So, do I need to allocate a pmd at this point? Or copy it from the struct_mm in which the shared region pte was originally mapped? 
+Do you know of any good references for messing around with the linux page tables? The best I have found is from Gorman: http://kernel.org/doc/gorman/html/understand/understand006.html. Unfortunately it doesn't explain how to manipulate the tables, just walk them.
+
+Thanks,
+James
