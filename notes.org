@@ -1307,13 +1307,90 @@ hijack.c:cos_alloc_page() - not the most exciting function, just calls __get_fre
 But the page has been allocated. I just need to correct its pmd.
 ** pmd
 
+* <2012-10-15 Mon 11:03> Page Tables
+Shared region needs to be mapped into cos_kernel.
+The course seems clear: I need to attemp to walk the tables to the location it should be. If pages are missing, then allocate them and fill in correct indexes.
+And by clear, I mean only at a very high level.
+** Allocate a page
+Do I need to keep a list of pages used to free later?
+Can I switch to get_zeroed_page instead of __get_free_pages in cos_alloc_page since the order is 0 and he memsets anyways?
+The only reason not to, that I can see, is that if the call fails it would be nice to know on which step.
+GFP_KERNEL: Flag defined by linux, means that it is okay for the kernel to sleep during allocation (basically, that we are not in an interrupt handler). Okay for me to use here.
+** page_pool
+I started looking here to see if I should use it to manage any pages allocated in hijack for page tables, but now I am confused.
+page_pool.h:struct page_list is defined as only having one element: struct page_list *next
+I don't see how this is useful, since it just points to another page_list... a linked list with links but no data.
+After reading through the code and how spd.c uses, I am still confused as to what is happening.
+When a page is allocated from the page_pool, its next value is set to null (page_pool pulls from its next value, which is then replaced by the next of the returned page).
+So, the address of the page_list struct must correspond to an actual page address.
+Yup, that looks like what it is doing. Too bad hijack doesn't include this file... I guess I should keep track of pages myself.
+** Allocate a page
+Too many details. Just allocate a page and see if you can use it in the page table structure. Worry about freeing it later.
+Alright, I'm able to (I think) correctly allocate a page as needed for the pmd level, and then set the pte to point to the shared memory.
+Of course, this is wrong. Gabe is using one level up, so that the page is 4MB instead of 4KB, but in 4 (and 3) level tables, the larger page is actually only 2MB. The 2 level table uses 10 / 10 bits, 3 (PAE) uses 2 / 9 / 9, and 4 uses 9 / 9 / 9 at least for now.
+** 2MB pages
+I'm tired of crashing. Alright. Seems like what I have could be correct. I am dubious though.
+Well... seg-fault, but let's see if I got the shared region setup correctly.
+cos: Mapping of shared region worked: deadbeef. 
+Huzzah! Looks like it worked!
+And complete freeze. Not surpising since we are getting much further along in the boot process now.
+** *pte: 80000000209c6067
+This seems problemmatic.
+There are a lot of functions in hijack that mess with page tables, and need to be fixed.
+*** copy_pgd_range
+** What is the job of translator?
+
+* <2012-10-16 Tue 09:15> Page Table Functions
+According to my excellent grep skills, (grep "void [a-z|A-Z]*_pgtbl" hijack.c), I have 8 functions to fix.
+The tricky part will be how to test them.
+Well, 11 with grep "void [a-z|A-Z]*_*[a-z|A-Z]*_pgtbl" hijack.c (includes "void print_valid_pgtbl)
+Of course, there could be some non-void ones: unsigned long get_valid_pgtbl_entry(paddr_t pt, int n)
+This is a lot of code to change. I think that I am going to extract all of the page table code.
+Okay, I should leave grep to the experts. There are a bunch of functions.
+** page_tables.h
+I'm pulling all of the page table related functions out.
+Eventually this will have to become part of the Hardware Abstraction Layer, but for now I'm just throwing it here.
+Gabe hates the #ifdefs, but I hate build systems about as much.
+This is taking a long time. Turns out that page tables are a huge part of the hijack code, which makes sense, I suppose.
+I will need to change the function names to differentiate between big and regular pages (since pgd no longer makes sense.
+* <2012-10-18 Thu 11:01>
+I need to finish page tables so that I can move ahead with IPC.
+And I just crashed the VM. Perhaps I have made an error with my edits.
+How did I screw this up? Surprisingly, a make clean fixed it.
+** cos: could not translate the user-cap address, 40606000, into a kernel vaddr for spd 1
+So, back to where I was before, but now page table code has been ripped out of hijack. Git commit?
+Sigh.
+** Fixing page tables code
+I don't think that I need to keep track of pages allocated to fill in the page table.
+These should be cleaned up as the page tables are deallocated; should be able to walk the tables freeing everything.
+** pte: ffff880027cbf030  *pte: 8000000025015067
+This seems familiar.
+I wonder if this is okay. I mean, what's an extra bit among friends?
+Gah! This is shit.
+** Page issues
+pmd_large is a linux function that checks if a page has the page_pse (Page Size Extension) flag: it is more that 4kb.
+This lets you tell when a page is a regular one or a 2MB one (used to be 4MB, thus a lot of the issues).
+That didn't seem to fix my problem. Maybe I am not setting the page_pse flag correctly.
+** pgtbl_add_middledir
+This function should add in a new page if one isn't mapped in.
+This should be replaced by a function that 
+
+** HPAGE_SIZE
+I'm starting to think that this should be 2MB.
+It's set by HPAGE_SHIFT, which in 2-levels is 22 (after a convoluted path), and in 3 and 4 levels it's 21.
+These correspond of course to 4MB and 2MB.
+But, with the ifdef where it is defined, it's possible that it is already set correctly, since we are including so much from linux. It still (obviously) needs to be changed, it just is unlikely that it is causing my current problems.
+** pgtbl_fill_to_dir
+I added this function since I kept having to write the same code over and over.
+Will probably need a similar remove pages function, but this is going to be complicated.
+For example, will need to make sure that none of the other entries are mapped before deallocating.
+
 
 * USEFUL Things.
 ** bash
 Last entered command: !!
-Open a file that was found with your previous find command (
+Open a file that was found with your previous find command: emacs -nw `!!`
 Last entered arugument: $_
-
 ** find
 > find . -name "*.c" -o -name "*.h"
 > find . -name "*.h" -exec grep -n "pte_t" {} \;
@@ -1357,6 +1434,9 @@ Merge branch
 r for any register?
 *** Register Constraints
 =A - in x86_32, this refers to the pair eax and edx, so can not be used in x86_64
+** Job Management
+^z - background / fg - foreground
+kill %1 - kill first job listed (jobs)
 ** networking
 To restart, run following as root
 > /etc/init.d/networking restart
@@ -1379,6 +1459,8 @@ Split Horizontal / Vertical
   ^b+" / ^b+%  
 Scroll terminal / exit
   ^b+[ / q
+Rotate panes
+  ^b+^o
 * Assembly Conventions
 ** Composite Syscall
 | x86_32 | x86_64 | Purpose    |
@@ -1445,7 +1527,11 @@ See 9-24
 I got rid of the whole error code returning thing.
 Also, I probably broke it.
 ** Memory management
-Fix vas_mgr and valloc
+   Fix vas_mgr and valloc
+** shared_region_pte
+Fix james_page0 and james_page1 and how they are allocated
+** Hardware Abstraction Layer
+
 * Emails
 ** <2012-10-14 Sun 15:31> Gabe
 James,
