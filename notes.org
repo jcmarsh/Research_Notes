@@ -1374,7 +1374,6 @@ That didn't seem to fix my problem. Maybe I am not setting the page_pse flag cor
 ** pgtbl_add_middledir
 This function should add in a new page if one isn't mapped in.
 This should be replaced by a function that 
-
 ** HPAGE_SIZE
 I'm starting to think that this should be 2MB.
 It's set by HPAGE_SHIFT, which in 2-levels is 22 (after a convoluted path), and in 3 and 4 levels it's 21.
@@ -1385,6 +1384,63 @@ I added this function since I kept having to write the same code over and over.
 Will probably need a similar remove pages function, but this is going to be complicated.
 For example, will need to make sure that none of the other entries are mapped before deallocating.
 
+* <2012-10-22 Mon 11:24>
+I NEED to finish with page tables and start making progress with IPC.
+Still working on the functions that I striped out into page_tables.c
+** copy_pgtbl_range and related
+These are the tough ones. It seems like I can assume that everything should be working on pmds instead of pgds.
+** copy_pgtbl_range_nocheck(pt_to, pt_from, 0, 0xFFFFFFFF); 
+This is in copy_pgtbl.
+Seems intended to copy the entire address space. Should give hints as to how the rest of the functions work.
+** hpage_index(size)
+This function is going to return the number of pages needed for the size of memory.
+This sucks.
+Soo... everything is assuming big pages, right?
+Okay. So I need to find the starting pmd, copy everything in it, then move on to the next pmd?
+I don't know how to do this.
+The range of tables specified may not even be mapped in for everything..... gah!
+** pud
+Alright, I am just going to assume that everything is within one pmd.
+This limits memory to 1024MB if I'm not mistaken, but is much easier to code.
+Also, we are only dealing with big pages, as far as I can tell.
+
+* <2012-10-24 Wed 11:26>
+Time to refocus, and get this done.
+Four steps: 
+** Stop seg-faulting
+Constantly restarting is killing my productivity. 
+I should be able to set up memory and all and then bail before seg-faulting.
+Startup is a bit confusing though... should look into cos_loader. It's a beast.
+Might be failing in cos_loader.c:setup_kernel, should run in gdb, see what happens.
+*** #define rdtscll(val)
+What is this doing in cos_loader? Didn't I have problems with this before?
+I thought that I had fixed this, but I guess not? I had test code for it and everything.
+I did, but only in the header files. What a giant pain. rdtscl related defines are in 3 headers and 6 c files.
+Should I just copy and paste into each one of them? This is one of those "I just want to go home" moments.
+Looks like I likely had the rdtscl defines wrong. Looking at t.c in dietlibc, for just getting the low bits the original code is fine (it uses "a" and "edx", it is "A" that is problematic).
+Hopefully that was all of them.
+*** Seg-faulting?
+Still seg-faulting, the problem is likely occuring before the rdtscll calls, but at least that is probably fixed.
+Happens while printing addresses for components: 
+Found cos_atomic_user4_end address for component /tmp/c0.o.26382.o @ 40400051. 
+Restart.
+*** Setting up Sevices
+Sets up first service just fine, fails setting up the second service... which is...
+First is c0, second should be llboot.
+It's failing setting something up, probably a null pointer.
+Services are passed into setup_kernel, so could be from an earlier problem.
+Restart.
+*** aed_ioctl.h:cos_create_spd
+By the power of printfs, I have found that the problem is here. Which is surprising; it's a simple function.
+ioctl is an interface provided by linux to interact with hardware (input output control).
+We are adding new functions, which are implemented in hijack.c.
+*** hijack.c:aed_ioctl case AED_CREATE_SPD
+This is the likely culprit.
+And this function copies page tables. I guess I found the problem.
+I'm going home.
+** Test current page table code
+** Fix pgtbl_copy and related functions
+** Start IPC.
 
 * USEFUL Things.
 ** bash
