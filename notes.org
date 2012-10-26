@@ -1353,7 +1353,7 @@ Eventually this will have to become part of the Hardware Abstraction Layer, but 
 Gabe hates the #ifdefs, but I hate build systems about as much.
 This is taking a long time. Turns out that page tables are a huge part of the hijack code, which makes sense, I suppose.
 I will need to change the function names to differentiate between big and regular pages (since pgd no longer makes sense.
-* <2012-10-18 Thu 11:01>
+* <2012-10-18 Thu 11:01> Page Tables
 I need to finish page tables so that I can move ahead with IPC.
 And I just crashed the VM. Perhaps I have made an error with my edits.
 How did I screw this up? Surprisingly, a make clean fixed it.
@@ -1384,7 +1384,7 @@ I added this function since I kept having to write the same code over and over.
 Will probably need a similar remove pages function, but this is going to be complicated.
 For example, will need to make sure that none of the other entries are mapped before deallocating.
 
-* <2012-10-22 Mon 11:24>
+* <2012-10-22 Mon 11:24> Page Tables
 I NEED to finish with page tables and start making progress with IPC.
 Still working on the functions that I striped out into page_tables.c
 ** copy_pgtbl_range and related
@@ -1404,7 +1404,7 @@ Alright, I am just going to assume that everything is within one pmd.
 This limits memory to 1024MB if I'm not mistaken, but is much easier to code.
 Also, we are only dealing with big pages, as far as I can tell.
 
-* <2012-10-24 Wed 11:26>
+* <2012-10-24 Wed 11:26> Still Page Tables
 Time to refocus, and get this done.
 Four steps: 
 ** Stop seg-faulting
@@ -1441,6 +1441,36 @@ I'm going home.
 ** Test current page table code
 ** Fix pgtbl_copy and related functions
 ** Start IPC.
+* <2012-10-25 Thu 10:33> Finish Page Tables
+I did not get that far yesterday.
+But I found where the crash is happening: copying page tables for the second component.
+So, here are the three tasks that I didn't get to yesterday:
+** Test current page table code
+I'm not sure what would be the easiest way to test this. Maybe I should try outside of the composite code base.
+And then again, maybe not.
+Alright. I've tested it (copied into JAWS). I tested the copy_pgtbl function, which in turn uses others.
+Granted, not the most thorough (hpage_index might be wrong, but unlikely), but I now doubt it is the source of my problems.
+Gabe explained the copy functions, and they actually are simple. It's okay if they only operate on the top level.
+** Fix pgtbl_copy and related functions
+As far as I can tell, these are likely fine. See above.
+** Start IPC
+Well, there still seems to be a seg fault in here, so I guess I need to fix that first.
+** Seg-Fault
+I have the source: spd.c:pages_identical
+Fed into the function is vaddr_cap: 0000000040606000, cap: 7fff880025b6f000    
+Which look fairly un-identical. But these are page addresses. The function checks if the addresses map to the same page.
+The second address is the one throwing the seg-fault. Seems fine.... why is the leading bit 0?
+** pgtbl_vaddr_to_kaddr
+This function, as far as I can tell, is absolutely fine. It gives valid addresses for the preceding calls.
+It has got to be that leading 0. I'm pretty sure that that makes it non-canonical.
+* <2012-10-26 Fri 10:30> Mystery Error
+So, the page table code (copy functions at least) were correct all along. So now I need to figure out where
+this non-canonical address is comming from. Back to that funny *pte? the 800...0029xxxx one?
+** The leading bit
+Avoid the seg fault, and track down where this bit is being set.
+It's getting messed up in the lookup? Maybe we are using pte_offset_kernel incorrectly.
+Ternary statements!
+And restart.
 
 * USEFUL Things.
 ** bash
