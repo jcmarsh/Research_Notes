@@ -1,0 +1,28 @@
+#!/bin/sh
+
+cd ~/research/composite_64/src/
+
+tmux start-server
+tmux new-session -d -s composite
+
+# Set up root window
+tmux send-keys -t composite:0 "cd /root/experiments/" C-m
+tmux send-keys -t composite:0 "sudo su" C-m
+tmux split-window -t composite:0 -h
+tmux send-keys -t composite:0.1 "tailf /var/log/messages" C-m
+
+# Set up code
+tmux new-window -t composite:1 -n 'Code'
+tmux split-window -t composite:1 -h
+
+# Set up notes
+tmux new-window -t composite:2 -n 'Note'
+tmux split-window -t composite:2 -h
+tmux send-keys -t composite:2.0 "cd ~/research/Research_Notes/" C-m
+tmux send-keys -t composite:2.0 "e notes.org" C-m
+
+# Set up misc
+tmux new-window -t composite:3 -n 'Misc'
+
+tmux select-window -t composite:0
+tmux attach-session -d -t composite

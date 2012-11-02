@@ -1471,6 +1471,19 @@ Avoid the seg fault, and track down where this bit is being set.
 It's getting messed up in the lookup? Maybe we are using pte_offset_kernel incorrectly.
 Ternary statements!
 And restart.
+* <2012-10-31 Wed 10:49> Page Tables
+I thought I was done.
+The problem seems to be in the copy functions that are called when creating new spds/mpds. The others should be fine.
+** copy_pgd_range
+Problem must be in setting the pte before we get to spd.c:spd_set_location.
+* <2012-11-01 Thu 13:37> Memory problem
+I don't know what is causing the problem. Sigh.
+** thread.c
+What am I doing here? Uses COS_INFO_ADDR_REGION, seemingly incorrectly now. Maybe.
+Isn't being used yet, changed code to fail out before the bits that need to be fixed.
+** spd.c
+* <2012-11-02 Fri 10:56> Address 0x40606000
+Why is it already populated?
 
 * USEFUL Things.
 ** bash
