@@ -1485,6 +1485,53 @@ Isn't being used yet, changed code to fail out before the bits that need to be f
 * <2012-11-02 Fri 10:56> Address 0x40606000
 Why is it already populated?
 
+* <2012-11-05 Mon 11:40> Moving on
+The demon bit is to make an address as non-executable. Addresses used by spds, such as the problematic 0x40606000, are mapped in with mmap (or a variant thereof) which sets the bit as a protection mechanism.
+I should have gone to the documentation for IA32e (yes, that is actually what Intel calls memory management for x86_64) much earlier. My guess of an unsigned vs signed or long vs int problem was ultimately unfounded, although I suspect I took care of a few future errors in the process of inspecting the code. My guess that the bit was some sort of flag ended up being true, but I was looking in the wrong places. I focused on the Linux implementation which sets low order bits as flags, instead of the actual culprit: Intel.
+The question remains if pte_val in Linux should mask out the bit. But no matter.
+** Masking out the bit.
+A simple change to page_tables.c.
+And cleaning up all of the debug code and bits I commented out.
+Apparently it is not that simple. And I am having trouble with bitwise operations...
+Okay, literals are by default ints, not unsigned ints. I need to get to the point where I can read the warnings again.
+** Cleaning up
+I need to find where I had the code failing out before.
+** THE FOLLOW CODE NEEDS TO BE FIXED! FAILING OUT! 
+thread.c:thd_alloc is the offending function.
+
+* <2012-11-06 Tue 11:52> Cleaning up
+Still cleaning up the code. Then it's time to tackle the next bug.
+There is a lot of code that needs to be cleaned up.
+I think that I am going to try get to a running system first. Then I will at least know if I blow something up.
+** kernel/spd.c
+** kernel/inv.c
+** hijack.c
+** cpy_pgd_range
+** copy_pgtbl_range_nocheck
+** int (*fn)(void);
+In cos_loader.c:setup_kernel
+fn = (int (*)(void))get_symb_address(&s->exported, "spd0_main");
+So it is a function pointer... where in c0 is it defined?
+That line seems correct. It calls spd0_main and gets the correct return value. Success!
+<2012-11-08 Thu 13:04> Lost
+So, not sure if I should actually clean things up, or just push ahead. Should probably fix that page table thing.
+** Page Tables
+Okay. Fuck.
+*** consts.h
+In trying to fix hpage_index, I ended up back up consts.h, which has a few constants that assume a two level page table structure (Looking at you, PGDIR_SHIFT 21). I had tried to fix it before, but gave up. Now I remember why.
+Actually, I'm getting a ton of warnings and errors... maybe I should take care of them first.
+** Warnings / Errors
+Long neglected. Here I go!
+*** /components//include/cbuf.h:
+258: warning: cast to pointer from integer of different size
+ret = ((void*)(cm->nfo.c.ptr << PAGE_ORDER));
+cm is a struct cbuf_meta*
+Hmm... Gabe said to ignore components for now. So yeah, not going to actually mess with it.
+*** spd.c
+Can't ignore this one.
+
+
+
 * USEFUL Things.
 ** bash
 Last entered command: !!
@@ -1631,6 +1678,8 @@ Also, I probably broke it.
 Fix james_page0 and james_page1 and how they are allocated
 ** Hardware Abstraction Layer
 
+** Fix page table abstraction
+Start with hpage_index(). It is brain-dead the way I have it working now.
 * Emails
 ** <2012-10-14 Sun 15:31> Gabe
 James,
