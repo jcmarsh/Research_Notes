@@ -1513,7 +1513,7 @@ In cos_loader.c:setup_kernel
 fn = (int (*)(void))get_symb_address(&s->exported, "spd0_main");
 So it is a function pointer... where in c0 is it defined?
 That line seems correct. It calls spd0_main and gets the correct return value. Success!
-<2012-11-08 Thu 13:04> Lost
+* <2012-11-08 Thu 13:04> Lost
 So, not sure if I should actually clean things up, or just push ahead. Should probably fix that page table thing.
 ** Page Tables
 Okay. Fuck.
@@ -1529,6 +1529,63 @@ cm is a struct cbuf_meta*
 Hmm... Gabe said to ignore components for now. So yeah, not going to actually mess with it.
 *** spd.c
 Can't ignore this one.
+* <2012-11-09 Fri 12:30> Sprint
+First get a build going. Then fix page tables. Then test. Then clean up more code. Then move ahead.
+** spd.c
+spd_add_location... SERVICE_SIZE... in consts.h of course
+This is related to the 4MB / 2MB problem.
+MAX_SERVICE_DEPTH 31 <1- What is this?
+** building
+Hmm.... where is c0? I'm building comp0 as far as I can tell. 
+Maybe it's the simple_stklib.o that is manditory... I don't see that error in the make output though.
+It exists, and is being built. It's in components/lib
+Mayhaps I should not skip over building interfaces entirely.
+I think that I sorted the Makefiles correctly.
+I don't know what the c.o thing is.
+*** interfaces
+I need to include at least the interfaces that my components are using. I'm guessing that I will have to add those implementations to the list as well. Let's see what's missing.
+sched_hier, stkmgr, sched, pgfault, and cgraph. No idea what these are, but they are missing.
+I tried to add stkmgr, hopefully I did. BAM! I did. Who's the man? Right. Calm down. You haven't accomplished anything yet today aside from learning a bit of fucking make.
+* <2012-11-12 Mon 12:07>
+** Build c0
+According to Gabe, it's built by /components/implementation/Makefile.subsubdir. Back to Makefiles. Yeah!
+When I comment out the related line, things seem to build the same. So... maybe it isn't being run?
+General confusion about the makefile setup Gabe is using. Makefile.subdir and Makefile.subdirdir are included (as appropriate) for components so that they all have the same make scripts, with the only changes being their dependencies (and described in their local Makefile). It makes perfect sense, but is still a bit confusing.
+That seems to have fixed the problem.
+** cos_vas_cntl
+booter.c:cos_init calls this function, found components/include/cos_component.h.
+Not sure what is going on here. The addr argument is attained from round_up_to_pgd_page (in our favorite: consts.h).
+vas -> Virtual Address Space
+cos___vas_cntl, called by cos_vas_cntl. Can't find it's implementation. Maybe it's a cos syscall?
+Hey, I was right: cos_syscall_3(18, int, __vas_cntl, int, op_spdid, long, arg1, long, arg2);
+I still can't find the implementation, but there is a related enum in cos_types.h.
+So.... it should be getting the 2nd level table entry for round_up_to_pgd_page since these vas's are just those 4MB regions. This is, of course, more difficult now since the 2nd level address now only address 2MBs.
+** round_up_to_pgd_page
+I need to make sure that this is only used to "round up" an address to it's 2nd level (from bottom) page table.
+Used a few times. I will need to probably look into each of these to deal with the 4MB / 2MB problem.
+*** ./components/implementation/vas_mgr/simple/vas_mgr.c
+Fairly simple, shouldn't be much to change.
+Line 116: vas = alloc_page();
+This will likely have to change. And all implementing code for alloc_page should be checked.
+*** ./components/implementation/no_interface/llboot/booter.c
+I don't honestly understand how it is using round_up_to_pgd_page. Oh well.
+*** ./components/implementation/no_interface/boot/booter.c
+Trick. This is a link to llboot/booter.c. Or vis-versa.
+*** ./components/implementation/valloc/simple/valloc.c
+Used in __valloc_init().
+This will need more investigation, and I'm guess will have to be changed for the 4MB / 2MB problem.
+** vas_hell
+I will need to find where the vas_cntl functionality is actually implemented.
+Perhaps I should have things building first.
+** Building
+What is wrong now?
+Alright. It works fine.. except once I try to build something outside of no_interface.
+When I comment out the loop to build all subdirs in Makefile.subdir, it prevents everything in no_interface from being built. It also prevents anything in implementation from being build.
+Copy Makefile.subdir, one version for implementation and one for no_interface. Simplest solution I can think of.
+Makefiles.
+Done with Makefiles!
+** Running
+First... a restart.
 
 
 
@@ -1679,7 +1736,12 @@ Fix james_page0 and james_page1 and how they are allocated
 ** Hardware Abstraction Layer
 
 ** Fix page table abstraction
-Start with hpage_index(). It is brain-dead the way I have it working now.
+   Start with hpage_index(). It is brain-dead the way I have it working now.
+** VAS stuff (memory, 4MB / 2MB)
+   Take a look at <2012-11-12 Mon 12:07> 
+** Test consts.h macros
+Make sure that everything that should be an unsigned long is, especially constants. 
+For example, round_to_pow2 needs to be checked and tested.
 * Emails
 ** <2012-10-14 Sun 15:31> Gabe
 James,
