@@ -1546,7 +1546,7 @@ I don't know what the c.o thing is.
 I need to include at least the interfaces that my components are using. I'm guessing that I will have to add those implementations to the list as well. Let's see what's missing.
 sched_hier, stkmgr, sched, pgfault, and cgraph. No idea what these are, but they are missing.
 I tried to add stkmgr, hopefully I did. BAM! I did. Who's the man? Right. Calm down. You haven't accomplished anything yet today aside from learning a bit of fucking make.
-* <2012-11-12 Mon 12:07>
+* <2012-11-12 Mon 12:07> Build problems
 ** Build c0
 According to Gabe, it's built by /components/implementation/Makefile.subsubdir. Back to Makefiles. Yeah!
 When I comment out the related line, things seem to build the same. So... maybe it isn't being run?
@@ -1586,6 +1586,107 @@ Makefiles.
 Done with Makefiles!
 ** Running
 First... a restart.
+* <2012-11-13 Tue 10:24> Cleaning up
+I'm fixing a bunch of warnings. Most of them are in debug prints, but it doesn't hurt.
+A few complaints about putting parans around some of the constants.
+** pgtbl_vaddr_to_kaddr
+Wow... the warnings show a lot of problems here. I will have to check on this when I have everything running again.
+What was I thinking here?
+They were all print statements, didn't actually do anything (I thought they may have masked out a bit). Probably written in a desparate moment.
+** warnings
+So... some of these debug print warnings are not all that simple to clean up due to the linux types involved.
+Should be using the pte_val like functions for the prints, for now commenting out.
+** Build
+Finally building correctly. Problems with llboot in no_interface actually having some interfaces. Don't need to build the implemtations for the things it provides, such as sched and pgfault, but they must have their interfaces built.
+Restarting.
+** ld: initfs.o: No such file: No such file or directory
+I now get this with "make init". Apparantly I am not done with the build problems.
+Looks like it is built by implementatio/initf/simple. I guess I'll add that to the Makefiles.
+That fixed it. I am going to commit now that I finally have the minimal build working.
+** ./cos_loader: corrupted double-linked list
+Detected by glibc?
+So, something in cos_loader is messing up. No real indication as to what.
+My guess is something with the pages.
+Main component is being called, and it returns. So... do I have invocations working?
+Problem in the close function? This is a general function to close a file (such as the aed). 
+Wait, maybe not. hijack.c sets the file functions, there is no close, but ther is a release. Which is called.
+No... ipc isn't working. Just the main invocation.
+The question is: do I figure out the memory cleanup problem, or continue on? Leaning to continuing.
+** Refocus
+* <2012-11-14 Wed 11:34> Refocus
+A few things to tackle, in no particular order. Or at least, I don't know the order yet.
+** IPC
+I need to figure out how to create a component that then calls another. I'm not quite sure how to do this.
+Maybe I should try to just 
+** Memory problem (corrupted double-linked list)
+** Page Tables
+* <2012-11-15 Thu 13:13> IPC
+Busy with other things yesterday. Let's see if I can get this rolling today.
+** printc
+Will probably make life easier to have this working. But will need IPC to work. So... maybe not as helpful in trying to IPC to work. Two birds with one stone? One idiot with bad metaphors?
+** First, how do I get code in my component to execute?
+Great, pingpong_run.sh doesn't exist anymore. To the git! Oh... it's int the folder "old." Makes sense.
+Need to read docs on the runscript.
+** Symbol cos_comp_info at address 0x0.
+I don't know. My component includes cos_component.h, so I'm not sure why this is a problem. I think I'm going to look at page tables for a while. Seems less bothersome. 
+** printc
+** ?
+gcc cos_component.o yourcomp.o -c -o yourcomp2.o 
+./components/lib/cos_component.o
+* <2012-11-17 Sat 13:20> The build
+I'm doing something wrong when building my component.
+cos_loader isn't able to find cos_comp_info, which isn't doesn't even come up in an objdump.
+Which I don't understand... I'm including cos_component.h.
+** Lost
+I am at a complete loss as to why some components (comp0, llboot) are linking fine, but mine is not.
+I'm going to try to create a new component, just to see how it goes. Maybe I missed a step.
+* <2012-11-20 Tue 14:48> Building
+Working on getting a simple component built. I have managed to get it working in 32bit composite, not back to 64.
+The problems may have been related to not doing "make init", but I'm not sure why. This was a problem in 32 bit, but may not have been in 64 bit.
+I am writing notes on paper, in the white binder. It's probably not a great idea to split them, but I need to have something tactile every once in a while.
+* <2012-11-22 Thu 11:24> Stacks
+Gabe figured out the problem: linking.
+I had commented out code in cos_asm_upcall, which is included in every component.
+And it links in cos_component as a library (libcos_component.a). Unless you comment that code out.
+So I need to convert that assembly.
+** Moving on
+Now we are seg-faulting, but not until after c0's main returns.
+I think that I am going to ignore this for now, and try to invocations working.
+** ENABLE_STACK_MANAGER
+I'm confused about this one. There is also a ENABLE_STK def.
+It is set in cos_stkmgr_configure.h which has the following comment: 
+// Must be 1 or nothing, this is a very fragile system
+ENABLE_STK:=${shell grep ENABLE_STACK_MANAGER include/cos_stkmgr_configure.h | awk '{print $$3 }' }
+What is all this? I just want a simple stack implementation.
+I currently have the stack manager disabled, which is what I want.
+Everything seems happy now! Fixed cos_stkmgr_configure.h so that the manager is disabled.
+** printc
+* <2012-11-23 Fri 14:42>
+Not much done yesterday, but it was Thanksgiving. Yesterday and today are like bonus work days.
+Too bad I'll be in tomorrow as well trying to get this done. Because I slacked today.
+Alright. I need to get rolling. What is something I can do in 15 minutes? What am I doing anyways?
+** Seg-Fault
+gdb cos_loader
+run "c0.o, ;llboot.o, ;james.o, ;print.o, :c0.o-llboot.o;james.o-print.o" ./gen_client_stub
+Seg-faulting with 0's for everything. Not super useful.
+The problem seems to be in:
+*** close(cntl_fd);
+Let's see where it is defined. Haven't I looked at this before?
+Looks like close(cntl_fd) ends up calling hijack.c:aed_release, which makes sense.
+I am seeing an odd error line, but I'm not sure if it is abnormal or I just never noticed before:
+segfault at 0 ip (null) sp 00007fffcbefb258 error 14 in cos_loader[400000+d000]
+The stack pointer address seems odd. Maybe I am screwing it up somewhere... perhaps in aed_release.
+Also, this function gets spit out in a trace: remove_from_page_cache <- in linux source.
+*** cos_rdtscll
+Five bucks says that this is it.
+Hmm... looks like nope.
+But it is still wrong. Damnit, how many times is this one function defined?
+That was it. Of course. Funny %rsp means you have $%#*&! up some assembly.
+** glibc detected 
+./cos_loader: free(): invalid pointer: 0x000000000060e030 ***
+Seems to be happening while deallocating services.
+The problem is cause when the service_symbs struct is being freed.
+The address, however, should be valid, and on the heap.
 
 
 
@@ -1742,6 +1843,9 @@ Fix james_page0 and james_page1 and how they are allocated
 ** Test consts.h macros
 Make sure that everything that should be an unsigned long is, especially constants. 
 For example, round_to_pow2 needs to be checked and tested.
+** page_tables.c
+Clean up, and fix things like copy_lvl2_range
+
 * Emails
 ** <2012-10-14 Sun 15:31> Gabe
 James,
