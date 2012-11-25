@@ -1661,7 +1661,7 @@ What is all this? I just want a simple stack implementation.
 I currently have the stack manager disabled, which is what I want.
 Everything seems happy now! Fixed cos_stkmgr_configure.h so that the manager is disabled.
 ** printc
-* <2012-11-23 Fri 14:42>
+* <2012-11-23 Fri 14:42> Segfault fixed, invalid pointer found
 Not much done yesterday, but it was Thanksgiving. Yesterday and today are like bonus work days.
 Too bad I'll be in tomorrow as well trying to get this done. Because I slacked today.
 Alright. I need to get rolling. What is something I can do in 15 minutes? What am I doing anyways?
@@ -1687,7 +1687,26 @@ That was it. Of course. Funny %rsp means you have $%#*&! up some assembly.
 Seems to be happening while deallocating services.
 The problem is cause when the service_symbs struct is being freed.
 The address, however, should be valid, and on the heap.
-
+* <2012-11-25 Sun 14:49> Invalid Pointer
+Hmm... now we have a seg-fault. Same function though (freeing up service_symbs).
+Okay, now we have a seg-fault, but prior to reaching that function.
+** Consistent behavior?
+Can I at least get it to fail out the same way?
+Hmm... looks like the error from before. Did I forget to commit those changes?
+Nope, cos_rdtscll fix is there. Just needed to re-make everything.
+** 32 bit?
+I do not understand why there is such a problem freeing the memeory.
+obj is nil...
+I think that I'm going to take a look at the 32 bit version, and see what kind of adresses it is spitting out.
+From x86_64:
+Freeing 0x60e030
+         obj: (nil)
+         str->exported: 0x60e0b8
+         str->undef: 0x6180c8
+         str: 0x60e030
+//*** glibc detected *** ./cos_loader: free(): invalid pointer: 0x000000000060e030 ***
+From x86_32:
+obj has an address... I need to figure out where this is being allocated.
 
 
 * USEFUL Things.
