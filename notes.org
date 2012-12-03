@@ -1707,13 +1707,90 @@ Freeing 0x60e030
 //*** glibc detected *** ./cos_loader: free(): invalid pointer: 0x000000000060e030 ***
 From x86_32:
 obj has an address... I need to figure out where this is being allocated.
-
+* <2012-11-27 Tue 15:17> Invalid Pointer
+** Allocation
+s: 0x60e030
+s->obj 0x643110
+So... the service is instantiated, and s->obj is not nil, at least for a bit.
+It seems to be correct in the setup_kernel function.
+Hmm..... interesting.... something is messing it up. Binary search for error!
+*** setup_kernel
+It is in this function that something goes wrong.
+I'm closing in... either aed_enable_syscalls or close... My bet is on close:
+*** close
+I was right. Somehow that doesn't make me especially happy. What's wrong with close?
+close(), as we have discovered previously, calls: hijack.c:aed_release
+*** Pages... again
+Found the problem:
+      pgd = pgd_offset(composite_union_mm, COS_INFO_REGION_ADDR);
+      memset(pgd, 0, sizeof(int));
+This is a top level directory, meaning that I am actually unmapping a ton of addresses.
+Also the sizeof(int) is wrong.
+I will need to come back an clean up this code. It only allows for 2MB of shared memory, instead of 4.
+But that is how all of my code is at the moment.
+** cos_sched_base.c
+I want to get invocations working, but I really don't trust my sample component, so I'm trying out cpu.
+This is probably a bad idea... but I'm not even sure if the main method in my component is being called.
+Okay, it is not being called. I guess that calling it might be an invocation...
+* <2012-11-29 Thu 11:21> Invocation.
+This title is losing meaning, since I have used it so much.
+How do I make a simple invocation? As far as I can tell my first component is not being called.
+But is that an invocation?
+** tracing startup
+cos_loader calls the comp0.c:spd0_main, which in turn calls main and sched_init
+*** main
+This is defined in cos_component.c, and is weak, so can be overwritten (although it is not in this case).
+Testing... It works! Doesn't do anything, but that is better than breaking.
+*** sched_init
+Maybe my component is never being scheduled.
+I'm not sure why the aed file is being create an then closed... some sort of bootstrapping?
+Declared by interface/sched_hier/sched_hier.h, so in this case fulfilled by llboot
+Not in booter.c, so must be in cos_asm_scheduler.S, in components/implementation/sched
+I'm not sure how that gets linking in.
+And yet, still no sched_init.
+Where is this code?
+**** boot_deps.h
+Has a implementation which calls cos_init(). Maybe this is the key.
+So comp0 includes sched_hier.h, which declares sched_init, and then llboot provides it through boot_deps.h
+Testing... huh. That's weird.
+return value is: 1082142752. Or, in hex: 40803020. Looks like an address to me. I was expecting 92.
+** Invocation
+So, I suppose I have found an invocation that is not working. I guess I should fix that.
+I wonder if that address actually had the correct value. May not even be worth checking.
+Well, ucap_tbl for c0 happens to be located at 0x40803000. Interesting.
+That table would likely have sched_init in it, (ha! init in it), since the table should contain capabilities that it can invoke.
+Should be a struct usr_inv_cap
+This struct is used in cstub.h, used as an argument for the generated stubs.
+Defined in cos_types.h
+Should I be looking at the generated stubs?
+Can I just use the... I don't know.
+I talked to Gabe; he put me back on track
+** Comp-to-Kernel
+I'm switching to paper notes.
+Using print syscall:
+  cos_print("In comp0:spd0_main\n", 20);
+** /components/lib/c_stub.S
+/* All un-implemented */  
+Awesome. Time to figure out the conventions.
+Or make them up, I guess.
+** BASE: Reached Test Function Two! Call IPC 
+I'm in the kernel! Awesome. Time to break more things (aka write assembly)
+updated c_stub.S
+now working on kernel/inv.c:ipc_walk_static_cap
+cos: capability 134216261 greater than max from spd 0 @ 4080007b.
+* <2012-11-30 Fri 11:06> Enter the Kernel
+* <2012-12-03 Mon 11:09> Sigh.
+Paper notes.
 
 * USEFUL Things.
 ** bash
 Last entered command: !!
 Open a file that was found with your previous find command: emacs -nw `!!`
 Last entered arugument: $_
+** debuging, asm
+Fail out (so that registers can be examined:
+    xor %rdi, %rdi
+    call *%rdi 
 ** find
 > find . -name "*.c" -o -name "*.h"
 > find . -name "*.h" -exec grep -n "pte_t" {} \;
@@ -1792,20 +1869,25 @@ Rotate panes
 | edx    | rdi    | spd_id     |
 | ebx    | rsi    | arg0       |
 | esi    | rdx    | arg1       |
-| edi    | r10    | arg2       |
+| edi    | r10    | arg2       | << rcx? Better not, clobbered by syscall
 | ecx    | r8     | ret_ip     |
 | ebp    | r9     | ret_esp    | 
 ** Composite IPC
 | x86_32 | x86_64 | Purpose |
 |--------+--------+---------|
 | eax    | rax    | cap_#   |
-| ebp    | rsp    |         |
-| 
+| ebp    | r9     | sp      |
+| ecx    | r8     | ip      |
+| ebx    | rsi    | arg0    |
+| esi    | rdx    | arg1    |
+| edi    | r10    | arg2    |
+| edx    | rdi    | arg3    |
 ** syscall
 Clobber rcx, r11
 %rax has the syscall number
 Kernel interface uses %rdi, %rsi, %rdx, %r10, %r8, %9
 ** sysenter
+** x86_64 call
 
 * Todo
 ** Look at hw_ints.c
@@ -1864,6 +1946,7 @@ Make sure that everything that should be an unsigned long is, especially constan
 For example, round_to_pow2 needs to be checked and tested.
 ** page_tables.c
 Clean up, and fix things like copy_lvl2_range
+Oh yeah, don't forget hijack.c:aed_release()
 
 * Emails
 ** <2012-10-14 Sun 15:31> Gabe
