@@ -563,7 +563,7 @@ Defined in kernel/include/shared/cos_types.h with many of the core data structur
 cos_comp_info is external to cos_component.h. It must be a variable in the component that is making the call.
 ** cos_component.c
 Shit! Didn't realize that there is a cos_component.c...
-I don't quit get it. Looks like it would be something that one would extend or inherit from in an OO lang. But this is c.
+I don't quite get it. Looks like it would be something that one would extend or inherit from in an OO lang. But this is c.
 How the bloody hell does this work? I don't see where cos_comp_info is created or stored. Except in cos_component.c, but I don't see the link between that and the components.
 I'm just copying all of cos_component.c into my hello component. Seems reasonable.
 Had to comment most of it out. Test run!
@@ -1471,6 +1471,7 @@ Avoid the seg fault, and track down where this bit is being set.
 It's getting messed up in the lookup? Maybe we are using pte_offset_kernel incorrectly.
 Ternary statements!
 And restart.
+
 * <2012-10-31 Wed 10:49> Page Tables
 I thought I was done.
 The problem seems to be in the copy functions that are called when creating new spds/mpds. The others should be fine.
@@ -1781,6 +1782,29 @@ cos: capability 134216261 greater than max from spd 0 @ 4080007b.
 * <2012-11-30 Fri 11:06> Enter the Kernel
 * <2012-12-03 Mon 11:09> Sigh.
 Paper notes.
+* <2012-12-04 Tue 14:30>
+* <2012-12-06 Thu 11:21> IPC: Part 2
+Paper notes.
+
+* Mexico
+* <2012-12-19 Wed 14:59> Syscall3
+It has been a while, but back at it.
+My problems are currently with 3 argument syscalls, which appear to be jumbling up the 3rd arguement.
+(llboot calls one of these to do some crap with memory, so I'll have to debug that bit as well, I am sure)
+Paper notes.
+* <2013-01-04 Fri 11:00>
+Just a quick update. I think that I have figure out my troubles.
+It is actually the 4th argument (since spdid gets added in as the first).
+For the 4th argument, the ABI convention is to use %rcx. The kernel interface, however, uses %r10 (since syscall trashes %rcx, for the return pointer or some such nonsense).
+-- Gabe says that someone is rewriting it anyways, so my hack will stand for now.
+
+* <2013-01-08 Tue 10:28> You may find yourself in a strange house
+I need to finish Composite. Soon. This is taking forever.
+** IPC Path
+** Merge HAL
+** Complete Page Tables
+** PARTY!
+** Do Actual Research
 
 * USEFUL Things.
 ** bash
@@ -1869,7 +1893,7 @@ Rotate panes
 | edx    | rdi    | spd_id     |
 | ebx    | rsi    | arg0       |
 | esi    | rdx    | arg1       |
-| edi    | r10    | arg2       | << rcx? Better not, clobbered by syscall
+| edi    | r10    | arg2       | << rcx? Better not, clobbered by syscall... actually... rbx?
 | ecx    | r8     | ret_ip     |
 | ebp    | r9     | ret_esp    | 
 ** Composite IPC
