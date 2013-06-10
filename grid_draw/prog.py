@@ -44,4 +44,9 @@ for i in range(0, alley_number - 2):
     draw.rectangle((0, y_value, max_x, y_value + line_width), fill=1)
     y_value = y_value + line_width
 
+# Create an obstacle in the upper left corner and the lower right corner
+# This is needed to keep player stage from contracting the map.
+draw.point((0,0), fill=0)
+draw.point((max_x - 1, max_y - 1), fill=0)
+
 im.save(file_name, "PNG")
