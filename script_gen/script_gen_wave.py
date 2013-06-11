@@ -15,13 +15,13 @@ speedups = (2, 4)#("1", "2", "4", "8")
 config = ConfigParser.RawConfigParser()
 
 config.add_section("files")
-config.set("files", "cfg", "./configs/art_pot.cfg")
+config.set("files", "cfg", "./configs/single_comp.cfg")
 config.set("files", "world", "./worlds/single_comp.world")
 config.set("files", "map", "SET_THIS")
 
 config.add_section("controllers")
 config.set("controllers", "num", "1") # Should probably fix this
-config.set("controllers", "cont0", "asdfasdf")
+config.set("controllers", "cont0", "wave")
 config.set("controllers", "name0", "hank")
 
 config.add_section("experiment")
