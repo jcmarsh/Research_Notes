@@ -2,14 +2,13 @@ import sys
 import ConfigParser
 
 results_name = "results.txt"
-folder_name = "test1"
+folder_name = "final_wave"
 # Parameters that have multiple values
-maps = (#"./bitmaps/grid_18.png",
-        "./bitmaps/grid_36.png",
+maps = (#"./bitmaps/grid_18.png",# "./bitmaps/grid_36.png",
         "./bitmaps/grid_54.png",
-        "./bitmaps/grid_72.png") #,
-        #"./bitmaps/grid_90.png")
-speedups = (2, 4)#("1", "2", "4", "8")
+        "./bitmaps/grid_72.png",
+        "./bitmaps/grid_90.png")
+speedups = ("2", "4", "8")
 
 # The default parameters
 config = ConfigParser.RawConfigParser()
@@ -25,7 +24,7 @@ config.set("controllers", "cont0", "wave")
 config.set("controllers", "name0", "hank")
 
 config.add_section("experiment")
-config.set("experiment", "runs", "3")
+config.set("experiment", "runs", "100")
 config.set("experiment", "timeout", "180")
 
 config.add_section("worldfile")

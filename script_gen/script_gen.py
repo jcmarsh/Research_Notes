@@ -2,7 +2,7 @@ import sys
 import ConfigParser
 
 results_name = "results.txt"
-folder_name = "test1"
+folder_name = "test2"
 # Parameters that have multiple values
 maps = (#"./bitmaps/grid_18.png",
         "./bitmaps/grid_36.png",
@@ -21,7 +21,7 @@ config.set("files", "map", "SET_THIS")
 
 config.add_section("controllers")
 config.set("controllers", "num", "1") # Should probably fix this
-config.set("controllers", "cont0", "asdfasdf")
+config.set("controllers", "cont0", "a_star")
 config.set("controllers", "name0", "hank")
 
 config.add_section("experiment")
