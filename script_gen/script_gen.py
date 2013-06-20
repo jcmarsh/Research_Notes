@@ -2,14 +2,18 @@ import sys
 import ConfigParser
 
 results_name = "results.txt"
-folder_name = "test2"
+folder_name = "a_star_test"
 # Parameters that have multiple values
-maps = (#"./bitmaps/grid_18.png",
+maps = ("./bitmaps/grid_18.png",
         "./bitmaps/grid_36.png",
         "./bitmaps/grid_54.png",
-        "./bitmaps/grid_72.png") #,
-        #"./bitmaps/grid_90.png")
-speedups = (2, 4)#("1", "2", "4", "8")
+        "./bitmaps/grid_72.png",
+        "./bitmaps/grid_90.png")
+speedups = ("1", "2", "4", "8")
+# Controllers are the same in all tests
+controllers = ("leader", "follower", "follower")
+# Names should be the same length as Controllers, 1 to 1
+names = ("hank", "frank", "samantha")
 
 # The default parameters
 config = ConfigParser.RawConfigParser()
@@ -20,12 +24,13 @@ config.set("files", "world", "./worlds/single_comp.world")
 config.set("files", "map", "SET_THIS")
 
 config.add_section("controllers")
-config.set("controllers", "num", "1") # Should probably fix this
-config.set("controllers", "cont0", "a_star")
-config.set("controllers", "name0", "hank")
+config.set("controllers", "num", str(len(controllers)))
+for i in range(len(controllers)):
+    config.set("controllers", "cont" + str(i), controllers[i])
+    config.set("controllers", "name" + str(i), names[i])
 
 config.add_section("experiment")
-config.set("experiment", "runs", "3")
+config.set("experiment", "runs", "10")
 config.set("experiment", "timeout", "180")
 
 config.add_section("worldfile")
