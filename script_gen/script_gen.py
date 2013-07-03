@@ -2,7 +2,7 @@ import sys
 import ConfigParser
 
 results_name = "results.txt"
-folder_name = "a_star_test"
+folder_name = "leader_test"
 # Parameters that have multiple values
 maps = ("./bitmaps/grid_18.png",
         "./bitmaps/grid_36.png",
@@ -11,9 +11,9 @@ maps = ("./bitmaps/grid_18.png",
         "./bitmaps/grid_90.png")
 speedups = ("1", "2", "4", "8")
 # Controllers are the same in all tests
-controllers = ("leader", "follower", "follower")
+controllers = ["leader"] #, "follower", "follower"]
 # Names should be the same length as Controllers, 1 to 1
-names = ("hank", "frank", "samantha")
+names = ["hank"] #, "frank", "samantha"]
 
 # The default parameters
 config = ConfigParser.RawConfigParser()
