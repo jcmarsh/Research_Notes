@@ -2,7 +2,7 @@ import sys
 import ConfigParser
 
 results_name = "results.txt"
-folder_name = "leader_test"
+folder_name = "convoy_test"
 # Parameters that have multiple values
 maps = ("./bitmaps/grid_18.png",
         "./bitmaps/grid_36.png",
@@ -11,17 +11,17 @@ maps = ("./bitmaps/grid_18.png",
         "./bitmaps/grid_90.png")
 speedups = ("1", "2", "4", "8")
 # Controllers are the same in all tests
-controllers = ["leader"] #, "follower", "follower"]
+controllers = ["leader", "follower", "follower"]
 # Names should be the same length as Controllers, 1 to 1
-names = ["hank"] #, "frank", "samantha"]
+names = ["hank", "frank", "samantha"]
 
 # The default parameters
 config = ConfigParser.RawConfigParser()
 
 config.add_section("files")
-config.set("files", "cfg", "./configs/art_pot.cfg")
-config.set("files", "world", "./worlds/single_comp.world")
-config.set("files", "map", "SET_THIS")
+config.set("files", "cfg", "./configs/multi_comp.cfg")
+config.set("files", "world", "./worlds/multi_simple.world")
+config.set("files", "map", "SET_THIS") # TODO: What?
 
 config.add_section("controllers")
 config.set("controllers", "num", str(len(controllers)))
