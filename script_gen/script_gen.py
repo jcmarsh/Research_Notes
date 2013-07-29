@@ -19,7 +19,7 @@ maps = ["./bitmaps/door.png"]
 
 speedups = ["1"] #, "2", "4", "8"]
 # Manager that will coordinate the controllers
-manager = "linked_manager"
+manager = "Linked_Manager"
 # Controllers are the same in all tests
 controllers = ["leader", "follower", "follower", "door"]
 # Names should be the same length as Controllers, 1 to 1
