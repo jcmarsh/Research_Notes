@@ -3,40 +3,39 @@ import ConfigParser
 
 results_name = "results.txt"
 #folder_name = "uturn_convoy_test"
-folder_name = "door_test"
+folder_name = "convoy_simple_grid_baseline"
 # Parameters that have multiple values
 #maps = ["./bitmaps/uturn_18.png",
 #        "./bitmaps/uturn_36.png",
 #        "./bitmaps/uturn_54.png",
 #        "./bitmaps/uturn_72.png",
 #        "./bitmaps/uturn_90.png"]
-#maps = ["./bitmaps/grid_18.png",
-#        "./bitmaps/grid_36.png",
-#        "./bitmaps/grid_54.png",
-#        "./bitmaps/grid_72.png",
-#        "./bitmaps/grid_90.png"]
-maps = ["./bitmaps/door.png"]
+maps = [#"./bitmaps/grid_18.png",
+        "./bitmaps/grid_36.png",
+        "./bitmaps/grid_54.png",
+        "./bitmaps/grid_72.png",
+        "./bitmaps/grid_90.png"]
+#maps = ["./bitmaps/door.png"]
 
 speedups = ["1"] #, "2", "4", "8"]
 # Manager that will coordinate the controllers
 manager = "Linked_Manager"
 # Controllers are the same in all tests
-controllers = ["leader", "follower", "follower", "door"]
+controllers = ["leader", "follower", "follower"]
 # Names should be the same length as Controllers, 1 to 1
-names = ["hank", "frank", "samantha", "wall"]
+names = ["hank", "frank", "samantha"]
 
 # Parameter pairs to be sent to the failure model
-failure_pairs = [
-    ["happy", "duck"],
-    ["drunk", "turtle"],
-    ["calm", "monkey"]]
+failure_pairs = []
+#    ["manager", "Standard_Failure"],
+#    ["time", "60"]]
 
 # The default parameters
 config = ConfigParser.RawConfigParser()
 
 config.add_section("files")
-config.set("files", "cfg", "./configs/multi_comp_door.cfg")
-config.set("files", "world", "./worlds/multi_simple_door.world")
+config.set("files", "cfg", "./configs/multi_comp.cfg")
+config.set("files", "world", "./worlds/multi_simple.world")
 config.set("files", "map", "SET_THIS") # Set with an element from maps
 
 config.add_section("controllers")
@@ -78,7 +77,7 @@ count = 0
 for i in range(0, len(speedups)):
     for j in range(0, len(maps)):
         bash_script.write("echo \"" + str(count) + " Experiment: ############################\"\n")
-        bash_script.write("python overlord.py ./experiments/" + folder_name + "/conf_" + str(count) + ".ini " + results_name + "\n\n")
+        bash_script.write("python overlord.py ./experiments/" + folder_name + "/conf_" + str(count) + ".ini " + "./experiments/" + folder_name + "/" + results_name + "\n\n")
         count = count + 1
 
 
