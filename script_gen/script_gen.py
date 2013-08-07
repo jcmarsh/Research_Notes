@@ -25,6 +25,12 @@ controllers = ["leader", "follower", "follower", "door"]
 # Names should be the same length as Controllers, 1 to 1
 names = ["hank", "frank", "samantha", "wall"]
 
+# Parameter pairs to be sent to the failure model
+failure_pairs = [
+    ["happy", "duck"],
+    ["drunk", "turtle"],
+    ["calm", "monkey"]]
+
 # The default parameters
 config = ConfigParser.RawConfigParser()
 
@@ -39,6 +45,10 @@ config.set("controllers", "num", str(len(controllers)))
 for i in range(len(controllers)):
     config.set("controllers", "cont" + str(i), controllers[i])
     config.set("controllers", "name" + str(i), names[i])
+
+config.add_section("failure")
+for i in range(len(failure_pairs)):
+    config.set("failure", failure_pairs[i][0], failure_pairs[i][1])
 
 config.add_section("experiment")
 config.set("experiment", "runs", "10")
