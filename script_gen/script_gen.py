@@ -1,41 +1,54 @@
+import os
 import sys 
 import ConfigParser
 
-results_name = "results.txt"
-#folder_name = "uturn_convoy_test"
-folder_name = "convoy_simple_grid_baseline"
-# Parameters that have multiple values
-#maps = ["./bitmaps/uturn_18.png",
-#        "./bitmaps/uturn_36.png",
-#        "./bitmaps/uturn_54.png",
-#        "./bitmaps/uturn_72.png",
-#        "./bitmaps/uturn_90.png"]
-maps = [#"./bitmaps/grid_18.png",
-        "./bitmaps/grid_36.png",
-        "./bitmaps/grid_54.png",
-        "./bitmaps/grid_72.png",
-        "./bitmaps/grid_90.png"]
-#maps = ["./bitmaps/door.png"]
+def print_n_quit():
+    print 'usage: python script_gen.py [experiment_configuration_file.conf]'
+    exit()
 
-speedups = ["1"] #, "2", "4", "8"]
-# Manager that will coordinate the controllers
-manager = "Linked_Manager"
-# Controllers are the same in all tests
-controllers = ["leader", "follower", "follower"]
-# Names should be the same length as Controllers, 1 to 1
-names = ["hank", "frank", "samantha"]
+if len(sys.argv) < 2:
+    print_n_quit()
+
+my_config_file_name = sys.argv[1]
+if os.path.splitext(my_config_file_name)[1] != ".conf":
+    print_n_quit()
+
+my_config = ConfigParser.ConfigParser()
+my_config.readfp(open(my_config_file_name)) # TODO: error check
+
+results_name = my_config.get("settings", "results_file")
+folder_name = my_config.get("settings", "folder")
+
+num_maps = int(my_config.get("maps", "num"))
+maps = []
+for i in range(num_maps):
+    maps.append(my_config.get("maps", "map" + str(i)))
+
+manager = my_config.get("control", "manager")
+num_controllers = int(my_config.get("control", "num"))
+controllers = []
+names = []
+for i in range(num_controllers):
+    controllers.append(my_config.get("control", "cont" + str(i)))
+    names.append(my_config.get("control", "name" + str(i)))
+
+num_speeds = int(my_config.get("speeds", "num"))
+speedups = []
+for i in range(num_speeds):
+    speedups.append(my_config.get("speeds", "speed" + str(i)))
 
 # Parameter pairs to be sent to the failure model
+failure_options = my_config.options("failure")
 failure_pairs = []
-#    ["manager", "Standard_Failure"],
-#    ["time", "60"]]
+for i in range(len(failure_options)):
+    failure_pairs.append([failure_options[i], my_config.get("failure", failure_options[i])])
 
 # The default parameters
 config = ConfigParser.RawConfigParser()
 
 config.add_section("files")
-config.set("files", "cfg", "./configs/multi_comp.cfg")
-config.set("files", "world", "./worlds/multi_simple.world")
+config.set("files", "cfg", my_config.get("files", "config"))
+config.set("files", "world", my_config.get("files", "world"))
 config.set("files", "map", "SET_THIS") # Set with an element from maps
 
 config.add_section("controllers")
@@ -50,12 +63,11 @@ for i in range(len(failure_pairs)):
     config.set("failure", failure_pairs[i][0], failure_pairs[i][1])
 
 config.add_section("experiment")
-config.set("experiment", "runs", "10")
-config.set("experiment", "timeout", "180")
+config.set("experiment", "runs", my_config.get("experiment", "runs"))
+config.set("experiment", "timeout", my_config.get("experiment", "timeout"))
 
 config.add_section("worldfile")
 config.set("worldfile", "speedup", "SET_THIS") # Set with an element from speedups
-
 
 # Make all of the .ini files
 count = 0
@@ -66,7 +78,6 @@ for i in range(0, len(speedups)):
         new_file = open("conf_" + str(count) + ".ini", "w")
         config.write(new_file)
         count = count + 1
-
 
 # Make a file "run_set.sh"
 bash_script = open("run_set.sh", "w")
