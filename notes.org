@@ -18,8 +18,7 @@ Composite uses the AT&T style format
   Compile with "as" instead of "nasm"
   Registers are prefixed with %
   Source operand comes before the destination
-** It is all going to have to change to make the switch to x86_64
- 
+** It is all going to have to change to make the switch to x86_64 
 * Tue Jul 31 08:01:52 PDT 2012
 Assembly is on the back burner. Will try today to get a basic build (which will just fail out).
 I will start committing changes to my local git.
@@ -1861,9 +1860,26 @@ r for any register?
 ** Job Management
 ^z - background / fg - foreground
 kill %1 - kill first job listed (jobs)
+** Kernel, adding driver
+find the .config file, in the source for the kernel you download. Go there.
+Backup the .config
+> make menuconfig  <- menu based config editor
+> make 
+> make modules
+> sudo make install
+> sudo make modules_install
+> sudo mkinitramfs -o /boot/initrd.img-2.6.36 2.6.36
+> sudo update-grub
+Restart. Obviously the image name may be different.
 ** networking
 To restart, run following as root
 > /etc/init.d/networking restart
+*** If networking isn't working at all:
+And ifconfig isn't showing the device (eth0)
+Check if the hardward exists
+> lspci
+If the hardware is there, then the problem is likely a missing driver.
+See adding drivers to kernel.
 ** objdump
   Print out symbol table > -t 
 ** org-mode

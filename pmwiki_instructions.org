@@ -1,0 +1,28 @@
+* Install pmwiki
+** Dependencies
+lighttpd
+php
+** pmwiki itself
+* Config
+** upload file size
+The max upload size is actually affected by several configuration files, the first of which is for pmwiki itself.
+Then you have to make sure that the http server / php isn't limiting it as well.
+help: http://www.pmwiki.org/wiki/Cookbook/SystemLimits
+*** pmwiki
+[root_wiki_dir]/local/config.php
+Search for upload to find the section with $EnableUpload and $UploadMaxSize. My section looks like:
+$EnableUpload = 1;
+# $UploadPermAdd = 0;                                                           
+$DefaultPasswords['upload'] = crypt('your_password_here');
+$UploadMaxSize = 100000000;
+*** php
+php will also limit your uploads. There are two possible ways to set this correctly... I'm not sure which is working for me, because I did both... should confirm.
+[root_wiki_dir]/.user.ini - This is the private config file. Mine is:
+memory_limit = 64M
+post_max_size = 12M
+upload_max_filesize = 10M
+max_execution_time = 60
+
+/etc/php5/cgi/php.ini - This sets the php settings globally.
+Here I just changed the following line from 1M to 10M:
+upload_max_filesize = 10M

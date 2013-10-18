@@ -11,10 +11,29 @@ void food() {
   printf("Ticks: %ld\n", ticks);
 }
 
+void test_func() {
+  int sum, i, count;
+
+  for (i = 1; i <= 100; i++) {
+    sum += i;
+    count++;
+  }
+
+  printf("Sum: %d\tCount: %d\n", sum, count);
+}
+
 void main() {
+  unsigned long start;
+  unsigned long end;
+
+
   printf("Sup?\n");
-  food();
-  printf("Not much. You?\n");
+  
+  rdtscll(start);
+  test_func();
+  rdtscll(end);
+
+  printf("Not much. You? %d\n", end - start);
 }
   
 
