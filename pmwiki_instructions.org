@@ -1,9 +1,40 @@
 * Install pmwiki
+Main sources: http://www.pmwiki.org/wiki/PmWiki/Installation https://wiki.ubuntu.com/Lighttpd%2BPHP
 ** Dependencies
-lighttpd
-php
+pmwiki requires a webserver which can run php scripts. lighttpd is a "light" webserver, and we can enable php for it. Enter these commands ('>' is the pompt):
+> sudo apt-get install lighttpd php5-cgi
+> sudo lighty-enable-mod fastcgi
+> sudo lighty-enable-mod fastcgi-php
+> sudo service lighttpd force-reload
+You should now have a webserver running on your machine. Test it by pointing your browser at http://127.0.0.1/
+You should also test that php is running by creating a new file:
+/var/www/index.php
+With the contents:
+<?php phpinfo(); ?>
+If this does not display the php info page, something went wrong. Good luck.
 ** pmwiki itself
+pmwiki is just a collection of php files, so is just needs to be downloaded and unpacked into /var/www/wiki
+> cd /var/www/
+> sudo wget http://pmwiki.org/pub/pmwiki/pmwiki-latest.tgz
+> sudo tar zxvf pmwiki-latest.tgz 
+The wiki is now unpacked in a folder named after the version (2.2.56 for me). This folder should be renamed to "wiki" or "pmwiki".
+> sudo mv pmwiki-2.2.56/ ./wiki
+You can check the new wiki by going to: http://127.0.0.1/wiki/pmwiki.php
+You will likely get an error message. To resolve, follow the instructions show (replicated below):
+> cd /var/www/wiki/
+> sudo mkdir wiki.d
+> sudo chmod 777 wiki.d
+Now you should see the welcome page for pmwiki at http://127.0.0.1/wiki/pmwiki.php
 * Config
+** Copy sample configuration
+The welcome page will list some basic first steps. It is highly recommended that you read them. One of the suggestions is to set up your config file:
+> cd /var/www/wiki/
+> sudo cp ./docs/sample-config.php ./local/config.php
+** Set the cool picture!
+In config.php, uncomment and edit the following lines:
+$WikiTitle = 'PmWiki';
+# $PageLogoUrl = "$PubDirUrl/skins/pmwiki/pmwiki-32.gif"; 
+Note that $PubDirUrl will be /var/www/wiki/pub/
 ** upload file size
 The max upload size is actually affected by several configuration files, the first of which is for pmwiki itself.
 Then you have to make sure that the http server / php isn't limiting it as well.
