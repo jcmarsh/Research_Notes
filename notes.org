@@ -1804,6 +1804,25 @@ I need to finish Composite. Soon. This is taking forever.
 ** Complete Page Tables
 ** PARTY!
 ** Do Actual Research
+* --------------------------------------------------------
+* <2013-11-18 Mon 10:55> QEMU
+I'm back at it... but the goal is different now.
+I need to get some of my Player drivers running in Composite. I think that switching to QEMU may be a worthwhile venture. Unfortunately it means getting composite set up again. But we're sticking with 32bit for now.
+** Composite / QEMU
+Roughly following: https://help.ubuntu.com/community/Installation/QemuEmulator
+*** Install QEMU
+*** Download 10.04 32bit ubuntu server edition iso.
+*** Setup Disk File
+qemu-img create ubuntu-test 4G
+*** Install .iso to the new desk file
+I'm having troubles getting QEMU to use IDE instead SCSI
+qemu-system-i386 -hda ubuntu-test -cdrom ubuntu-10.04.4-server-i386.iso -m 512 -boot d
+qemu-system-i386 -drive file=ubuntu-test,index=0,media=disk,if=ide -cdrom ubuntu-10.04.4-server-i386.iso -m 256 -boot d
+*** Install Composite
+Get git (and others): sudo apt-get install git-core build-essential ncurses-dev binutils-dev (otherwise no bfd.h)
+Now follow the regulare Composite install instructions
+
+
 
 * USEFUL Things.
 ** bash
