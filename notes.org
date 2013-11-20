@@ -1813,16 +1813,27 @@ Roughly following: https://help.ubuntu.com/community/Installation/QemuEmulator
 *** Install QEMU
 *** Download 10.04 32bit ubuntu server edition iso.
 *** Setup Disk File
-qemu-img create ubuntu-test 4G
+    qemu-img create ubuntu-test 4G
 *** Install .iso to the new desk file
 I'm having troubles getting QEMU to use IDE instead SCSI
 qemu-system-i386 -hda ubuntu-test -cdrom ubuntu-10.04.4-server-i386.iso -m 512 -boot d
 qemu-system-i386 -drive file=ubuntu-test,index=0,media=disk,if=ide -cdrom ubuntu-10.04.4-server-i386.iso -m 256 -boot d
+I do not know why I was unable to get QEMU to use IDE instead of SCSI, but it doesn't seem to be a problem. SCSI had originally given me trouble with VMware (I was unable to patch the kernel; would fail on reboot, likely had the incorrect drivers), but QEMU handles it fine.
+So, to run, use something like (mounts cdrom, but does not boot from it, 512 ram):
+qemu-system-i386 -hda ubuntu-test -cdrom ubuntu-10.04.4-server-i386.iso -m 512
 *** Install Composite
 Get git (and others): sudo apt-get install git-core build-essential ncurses-dev binutils-dev (otherwise no bfd.h)
 Now follow the regulare Composite install instructions
 
+* <2013-11-20 Wed 10:30>
+I now have Composite running in QEMU, so it is on to getting a Player driver running as a Composite component!
+** Driver to Component
+Time to figure out how Player / Stage actually runs. Sigh.
+Player is the server, controllers are the clients. Drivers run inside of Player.
+** Controller to Component
+I need to convert libplayerc to work in Composite.
 
+* 
 
 * USEFUL Things.
 ** bash
