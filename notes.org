@@ -1833,7 +1833,56 @@ Player is the server, controllers are the clients. Drivers run inside of Player.
 ** Controller to Component
 I need to convert libplayerc to work in Composite.
 
-* 
+* <2013-11-21 Thu 11:12> libplayerc
+For a controller to be run inside a component, I am going to need libplayerc to work in composite.
+Not sure what exactly that entails.
+** c controller
+All of my controllers currently use libplayerc_py (since they are all in python). Unfortunately, Composite doesn't have python support.
+Based off of: http://playerstage.sourceforge.net/doc/Player-svn/player/group__libplayerc__example.html
+*** Run c controller on linux system
+Right now I'm building with pkg-config, will need to change that.
+Great... run_player.py needs to be updated.
+That took way too long. But run_player.py has been fixed and I have a basic controller. The good news is that it doesn't require stdio.h (was just there for printf).
+** libplayerc
+I need to have libplayerc building in composite, and to know what that actually means.
+I suppose that libplayerc will be a component?
+Nifty, Gabe post a guide to porting existing programs to the google group.
+The following are my execution of the steps he outlined
+*** Statically link example program.
+Using `strace` to run the example program, I see that there are calls to mmap, but I don't know if that is for libplayerc.
+`nm` shows that there are undefined lines to libplayerc functions. Lame.
+**** Statically link libplayerc
+Easy! Just had to turn of the option to build them as shared.
+Actually... compile error: usr/bin/ld: ../../../../libplayerinterface/libplayerinterface.a(playerxdr.o): relocation R_X86_64_32 against `xdr_player_devaddr_t' can not be used when making a shared object; recompile with -fPIC
+Disabled the python bindings. That did the trick.
+**** Build basic controller
+This is throwing a ton of errors, because libplayerc.a still has a ton of undefined symbols.
+Each device seems to have a slew of similar ones. For example, dev_simulation.o has a table like:
+dev_simulation.o:
+                 U free
+                 U malloc
+                 U memcpy
+                 U player_simulation_pose2d_req_t_free
+                 U player_simulation_pose3d_req_t_free
+                 U player_simulation_property_req_t_free
+                 U playerc_client_request
+                 U playerc_client_write
+                 U playerc_device_init
+                 U playerc_device_subscribe
+                 U playerc_device_term
+                 U playerc_device_unsubscribe
+0000000000000000 T playerc_simulation_create
+00000000000000d1 T playerc_simulation_destroy
+000000000000027c T playerc_simulation_get_pose2d
+0000000000000431 T playerc_simulation_get_pose3d
+000000000000062e T playerc_simulation_get_property
+0000000000000208 T playerc_simulation_get_time
+0000000000000743 T playerc_simulation_pause
+0000000000000133 T playerc_simulation_putmsg
+0000000000000775 T playerc_simulation_reset
+free, malloc, and memcpy are probably handled by dietlibc (I'll deal with that next).
+playerc_client_request is in almost all devices. So, how do I build the devices statically?
+
 
 * USEFUL Things.
 ** bash
