@@ -1882,7 +1882,35 @@ dev_simulation.o:
 0000000000000775 T playerc_simulation_reset
 free, malloc, and memcpy are probably handled by dietlibc (I'll deal with that next).
 playerc_client_request is in almost all devices. So, how do I build the devices statically?
+* <2013-11-25 Mon 13:08> build static libplayerc
+Still working on the libplayerc static library.
+I am now building every required c file into an object file (no linking). I will then try to link all of them together as a static library.
+rpc/xdr.h should be dietlibc.
+Not surprisingly, functiontable.o has many missing references...
 
+I don't know for sure... but now that I think about it, it doesn't seem like it would be possible to... hm.
+Wow, okay, looks like this might actually work.... I am suspicious. Down to 27 undefined references.
+Alright, well... looks like that is actually working. 
+But just for client.a
+Every single file is compiled by itself statically (with gcc -c). Then ld can be used to tie them all together. Still undefined symbols for glibc things.
+So, libplayerc just needs client and 50 other files. Fuck.
+I think that I am going to need to make a separate source repo, with its own make files. Alternatively I could learn how to use CMake.
+* <2013-12-02 Mon 13:14> static libplayerc
+I'm going to create a new git repo for the static libplayerc build. Seems like the best solution. That way I can create my own set of Makefiles.
+
+* <2013-12-04 Wed 14:10> libplayerc dietlibc
+Previous step was successful. I now have a repo of Make files which will copy over the needed Player files, and then build libplayerc.a as a static library.
+The next step is switching glibc for dietlibc.
+Oh right... still a few unresolved refs.
+Well, went ahead with dietlibc anyways; install with sudo apt-get, then just see CC to "diet gcc -nostdinc" in Makefile.variable (oh, and use $(CC) everywhere instead of gcc).
+__you_tried_to_link_a_dietlibc_object_against_glibc <- Seems like a problem.
+So, that is a symbol in the new object's symbol table. It is there so that LD can throw an error later if you try to link a dietlibc object to glibc.
+** zlib.h
+dev_map is not building: dev_map.c:49:20: fatal error: zlib.h: No such file or directory
+The question is if I should try to fix this at all. Will dev_map be used on the Composite side?
+Skipping for now.
+** Linking
+Apparently you need to link the required libraries AFTER the objects that need them.
 
 * USEFUL Things.
 ** bash
