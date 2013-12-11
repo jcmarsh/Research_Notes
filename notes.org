@@ -1960,6 +1960,30 @@ I got nothing done today. Late start followed by office hours, grading, and an e
 This might get ugly. It is defined in libgcc.a.
 The bad news is it is likely that libgcc.a has undefined refs or links to libc (which is problematic, since I am replacing libc with dietlibc).
 One option may be to simply copy the umoddi3 and udivdi3 code over. Hopefully it is not too complicated (or links).
+* <2013-12-10 Tue 10:56> Syscalls made by controllers
+On to the next step of porting libplayerc, finding out what syscalls are needed.
+** __umoddi3
+This problem has been resolved by linking the 32 bit libgcc.a
+I don't know if this will cause further problems down the line. We'll see.
+The unresolved symbols I was worried about are not in the __umoddi3 and __udivdi3 code, so were not a problem.
+** syscalls
+I can use strace to find what syscalls are made. I'll need to run it on the controller, since the sever will still run on linux.
+I have a simple controller in c right now, but I will likely need a more complicated one to get a better picture of what is happening.
+The problem I forsee now is that the server / controller behave differently when on the same machine instead of different. To test this, I may need to set up a vm and a virtual network.
+*** c controller
+Getting the basic c controller to compile with the static libplayerc was a pain, but I got it working.
+Of course, it had to be made as a 32 bit program, so I am going to need to set up that vm anyways.
+*** VM
+I think that I could probably use just the linux qemu vm that I already have set up for running Composite. Let's see.
+So, all of that is setup on my school computer (Home today due to snow and lack of internet in the office).
+**** Networking for vm
+How do I always screw this up, and never write it down?
+I'm setting up everything on my laptop, and need to fix networking for the vm.
+`lspci` will list devices (`ifconfig` shows no eth0). I need to install the driver for RTL8139* from Realtek (I forget what it was for vmware).
+**** Everything else
+Now I need to install player, the static player library, and download my stage code.
+For the player trunk: svn checkout svn://svn.code.sf.net/p/playerstage/svn/code/player/trunk player
+Having trouble building player for some reason. I could just copy the library over.
 
 
 * USEFUL Things.
@@ -2042,6 +2066,9 @@ See adding drivers to kernel.
 ** org-mode
 Date and Time stamp
   ^u+^c+.
+** qemu
+To exit, bring up monitor
+  ^+Alt+2 then type "quit"
 ** tar / gzip
 tar and gzip a folder:
 > tar -zcvf folder_name.tar.gz folder
