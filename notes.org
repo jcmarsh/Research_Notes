@@ -1985,6 +1985,31 @@ Now I need to install player, the static player library, and download my stage c
 For the player trunk: svn checkout svn://svn.code.sf.net/p/playerstage/svn/code/player/trunk player
 Having trouble building player for some reason. I could just copy the library over.
 
+* <2013-12-11 Wed 11:09> Installing
+Still working on getting everything running on the qemu vm.
+Turns out the problems with building player are from player being recently updated (and thus in conflict with my changes).
+I need to just download 3.0.2 instead of using the svn repo. I didn't realize that Player was still active (who is this jpgr87?).
+Hmm... or should I update?
+I need to roll everything back to 3.0.2.
+Sigh. Just rm -rf * my research directory. Which includes the qemu vm. And by "sigh" I mean "MOTHER FUCKER." Oh, and this file.
+** Rebuilding.
+Research_Notes: done
+Player: 3.0.2
+Stage: 
+Back to the Player problem: 3.0.2 does not seem to build (dev_coopobject.c is missing) and I am worried that the changes will screw up the static libplayerc work. But that could also be screwed up by the latest changes.
+dev_coopobject.c appears to be mine. And not in the stage to_player folder. Must have been a failed experiment.
+AAAAAAAAAAAHHHHHHHHHHHHHHHHHHHHHHHHH!!!!!!!!!!!!!!!!
+player needs swig for playerc.py, and PYTHONPATH needs to have /usr/local/lib/python2.7/site-packages added.
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib64
+export PYTHONPATH=$PYTHONPATH:/usr/local/lib64/python2.7/site-packages
+Okay. I'm going to try this again.
+** Rebuilding... again
+Forget rolling back player, because then I have to roll back stage as well.
+So I'm going to download them from source control, and revert to the version I have been working with all along.
+*** Player
+svn checkout svn://svn.code.sf.net/p/playerstage/svn/ playerstage-svn
+
+
 
 * USEFUL Things.
 ** bash
