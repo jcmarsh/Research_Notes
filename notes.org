@@ -2009,7 +2009,45 @@ So I'm going to download them from source control, and revert to the version I h
 *** Player
 svn checkout svn://svn.code.sf.net/p/playerstage/svn/ playerstage-svn
 
+* <2013-12-12 Thu 14:28> Syscalls made by Controllers
+We finally have Internet access in the lab, so I can return to using my lab computer.
+I didn't finish setting up my laptop, but can avoid it for now at least.
+Back to figuring out the syscalls made by the controller using libplayerc.
+** qemu install dietlibc
+wget http://www.fefe.de/dietlibc/dietlibc-0.33.tar.bz2
+bzip2 -d dietlibc-0.33.tar.bz2
+tar xvf dietlibc-0.33.tar
+cd dietlibc-0.33
+make (or `make i386` if on a 64 bit system)
+sudo cp ./bin-i386/diet /bin/
+To test type `diet`
+** delema.... er dilemma
+static_libplayerc currtenly copies files over from player instead of duplicating them.
+This seems good... except player then needs to be download AND built on the target system (because some of the needed files are generated during the build).
+** stage
+git clone https://github.com/jcmarsh/Stage.git
+** player
+svn checkout svn://svn.code.sf.net/p/playerstage/svn/code/player/trunk player
+cd player
+svn merge -r 9136:9122 .  (substitute latest version for 9136).
+Go to stage and run the to_player.sh script to copy changed files.
+Get dependencies:
+sudo apt-get install cmake-curses-gui swig libjpeg62-dev libpng12-dev
+Turn off just about every single driver except for one (yes, I know).
+make (no need to make install).
+** static_libplayerc
+git clone https://github.com/jcmarsh/static_libplayerc.git
+make copy
+need to set libgcc.a location in Makefile (last file to link).
+/usr/lib/gcc/i486-linux-gnu/4.4.3/libgcc.a
+** compile controller
+Change Makefile to no longer have -m32 (but may not matter)
+** Network
 
+* <2013-12-13 Fri 10:53> Syscalls made by Controllers
+Back to setting up a qemu vm to run the controller code.
+I need to get dietlibc working first, then compile and link with the static library.
+** dietlibc
 
 * USEFUL Things.
 ** bash

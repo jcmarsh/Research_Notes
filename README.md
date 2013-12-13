@@ -12,3 +12,5 @@ grid_draw is a python program to draw (you guessed it) grids for use in Player\S
 script_gen is a python script which creates a bash script to run Player\Stage experiments, plus the associated config files.
 
 Some test code my depend on Composite code, so will not work here.
+
+qemu_net has scripts for (hopefully) setting up the tap based network for qemu.
