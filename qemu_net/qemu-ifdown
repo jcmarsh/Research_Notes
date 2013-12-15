@@ -1,0 +1,28 @@
+#!/bin/sh 
+# 
+# Pulled from http://en.wikibooks.org/wiki/QEMU/Networking
+#
+# Script to bring down and delete bridge br0 when QEMU exits 
+# 
+# Bring down eth0 and br0 
+#
+ifdown eth0
+ifdown br0
+ifconfig br0 down 
+# 
+# Delete the bridge
+#
+brctl delbr br0 
+# 
+# bring up eth0 in "normal" mode 
+#
+ifconfig eth0 -promisc
+ifup eth0 
+#
+# delete the tap device
+#
+openvpn --rmtun --dev $1
+#
+# start firewall again
+# 
+#/sbin/service firestarter start 

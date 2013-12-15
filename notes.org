@@ -2048,6 +2048,11 @@ Change Makefile to no longer have -m32 (but may not matter)
 Back to setting up a qemu vm to run the controller code.
 I need to get dietlibc working first, then compile and link with the static library.
 ** dietlibc
+* <2013-12-15 Sun 15:56> QEMU
+To be able to test the code, I need to figure out how to connect my quest OS (running the controller) to the host (running Player / Stage).
+Following the wikibook for qemu suggestion for setting up a tap network: http://en.wikibooks.org/wiki/QEMU/Networking
+Alright! Success! (although I ended up having to run qemu as sudo... oh well.)
+Still need to fix the qemu-ifdown script it looks like.
 
 * USEFUL Things.
 ** bash
