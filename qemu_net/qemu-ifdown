@@ -6,9 +6,8 @@
 # 
 # Bring down eth0 and br0 
 #
-ifdown eth0
-ifdown br0
-ifconfig br0 down 
+ifconfig eth0 down
+ifconfig br0 down
 # 
 # Delete the bridge
 #
@@ -17,7 +16,7 @@ brctl delbr br0
 # bring up eth0 in "normal" mode 
 #
 ifconfig eth0 -promisc
-ifup eth0 
+ifconfig eth0 up
 #
 # delete the tap device
 #

@@ -2053,6 +2053,34 @@ To be able to test the code, I need to figure out how to connect my quest OS (ru
 Following the wikibook for qemu suggestion for setting up a tap network: http://en.wikibooks.org/wiki/QEMU/Networking
 Alright! Success! (although I ended up having to run qemu as sudo... oh well.)
 Still need to fix the qemu-ifdown script it looks like.
+* <2013-12-16 Mon 13:19> Syscalls, finally
+First, fix the ifdown script. done?
+Next, get the basic c controller running and check syscalls.
+Seg fault... and I don't even remember how to run tests!
+This is what happens when you turn everything off in player.
+** Seg fault
+Not even sure where it is happening...
+I'm going to add debugging symbols to static libplayerc.
+*** backtrace:
+0x08076aca in ?? ()
+0xf9b1e808 in ?? ()
+0xd231ffff in ?? ()
+0xc0855f5e in ?? ()
+0x08681474 in ?? ()
+0x500807e3 in ?? ()
+0x00004ee8 in ?? ()
+0x59d23100 in ?? ()
+0x0fc0855b in ?? ()
+0x1589c295 in ?? ()
+0x08081dec in ?? ()
+None of these match libplayerc symbols
+Maybe dietlibc? None of them match.
+*** error message?
+gdb suggests a corrupt stack when doing the backtrace.
+gdb can't even set a breakpoint, and is telling me that no symbol table is loaded.
+*** no .eh_frame_hdr
+Maybe this error is causing problems.
+
 
 * USEFUL Things.
 ** bash
