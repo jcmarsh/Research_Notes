@@ -2081,6 +2081,55 @@ gdb can't even set a breakpoint, and is telling me that no symbol table is loade
 *** no .eh_frame_hdr
 Maybe this error is causing problems.
 
+* <2013-12-17 Tue 10:50> Testing
+I'm going to go back and try to test my work at each stage. This seems like a more promising route than trying to figure out what is wrong from the broken finished product.
+** x86_64 libplayerc.a
+I need to see if I can get an example with just libplayerc.a working (not dietlibc yet).
+Made a branch in static_libplayerc for x86_64.
+Still lacking an entry symbol (but this should be fine).
+glibc is not statically linked, but I'm not worried about this since dietlibc will be.
+*** Testing x86_64 libplayerc.a
+Hmm... still with the .eh_frame_hdr warning.
+Seg fault. But this time with something more helpfule
+#0  0x00007ffff7de5d10 in ?? () from /lib64/ld-linux-x86-64.so.2
+#1  0x00007ffff7dddb3b in ?? () from /lib64/ld-linux-x86-64.so.2
+#2  0x00007ffff7defb24 in ?? () from /lib64/ld-linux-x86-64.so.2
+#3  0x00007ffff7ddf365 in ?? () from /lib64/ld-linux-x86-64.so.2
+#4  0x00007ffff7ddb6b8 in ?? () from /lib64/ld-linux-x86-64.so.2
+#5  0x0000000000000001 in ?? ()
+#6  0x00007fffffffe423 in ?? ()
+#7  0x0000000000000000 in ?? ()
+So, what is going on in ld-linux-x86-64? Sounds like a linker problem.
+In the program (basic), 0x0...0 is where GLIBC_2.2.5 is linked (start of the stack?)
+The ld-linux addresses look like heap addresses (which makes sense, since there are shared libraries).
+Switched to using `ar` for making libplayerc.a instead of ld.
+Ah! There are many undefined symbols in libplayerc.a now, but when the controller is compiled, the linker takes care of it.
+** Adding back dietlibc
+Have to switch to using dietlibc-0.33/bin-x86_64/ instead of bin-i386/
+Still some linking problems. floor and fmod.
+They do not seem to be in dietlibc (well, they are undefined in libm.a)
+Maybe they are in libgcc?
+So, floor and fmod are not provided by dietlibc for x86_64, but they are in i386.
+Which means that I shouldn't have any troubles if I just switch to the 32 bit version.
+** i386 libplayerc.a
+Switch back to mainline branch, but keep the ld to ar switch.
+Now back to qemu!
+I really need to clean out the stage git.
+*** collect2: ld terminated with signal 11 [Segmentation fault]
+This issue had to deal with not having the correct flags (in Makefile.variable set when making libplayerc.a)
+dietlibc was being used to compile the object files, but then not used when compiling the control program.
+** i386 libplayerc.a with dietlibc
+Added the dietlibc flags back in to libplayerc.a
+It works!
+Well, it doesn't seg fault.
+** Debug
+The program runs, but it doesn't actually control the robot for some reason.
+Since it does work when not using dietlibc, it seems reasonable that both sides need to be compiled with dietlibc.
+But what does that mean exactly?
+Host size is all of player... do I need to compile all of it with dietlibc? That seems like a tall order.
+I also have to deal with the 64bit problem then.
+** Syscalls
+I can at least see what syscalls are being made. 
 
 * USEFUL Things.
 ** bash
@@ -2165,6 +2214,16 @@ Date and Time stamp
 ** qemu
 To exit, bring up monitor
   ^+Alt+2 then type "quit"
+** ssh
+To setup ssh (and allow scp to be used):
+> sudo apt-get install openssh-server
+> sudo ufw allow 22
+If you want to make it more secure by restricting access via ip address:
+Edit /etc/hosts.allow to have
+  sshd: ipaddress
+and edit /etc/hosts.deny to have
+  sshd: ALL
+There is likely much more that should be done to actually secure the system.
 ** tar / gzip
 tar and gzip a folder:
 > tar -zcvf folder_name.tar.gz folder
@@ -2180,7 +2239,7 @@ Split Horizontal / Vertical
 Scroll terminal / exit
   ^b+[ / q
 Rotate panes
-  ^b+^o
+^b+^o
 * Assembly Conventions
 ** Composite Syscall
 | x86_32 | x86_64 | Purpose    |
