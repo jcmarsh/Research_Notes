@@ -1,0 +1,33 @@
+So, updating my school website has actually become a bit more complicated. But all in the interest of becoming easier. I think.
+
+The website content is all kept in ~/Dropbox/website/web_source ($WEB_SOURCE for this document)
+
+First, my personal wiki should be downloaded as a static copy into
+$WEB_SOURCE/wiki/
+This can be done by using wget to download the site as .html from the local server:
+wget -r -k -np -p -l 0 http://127.0.0.1/wiki/ --html-extension
+If run from within $WEB_SOURCE/wiki/ then:
+cp -r 127.0.0.1/wiki/* ./
+rm -rf 127.0.0.1/
+
+The pdf papers make this too large for the school server (and it may not be legal to rehost anyways...), so all pdfs should be deleted from the uploads directory:
+cd uploads/Background
+rm *.pdf
+cd ../System
+rm *.pdf
+cd ../Research
+rm *.pdf
+TODO: There should be a better way of doing this.
+
+Now that the website source is ready to go, it's time to generate the website.
+This can be done by going to ~/research/gen-site/ and running
+make clean
+make
+
+Tar, and upload to acad:
+tar cvf website.tar ./generated/
+scp website.tar jcmarsh@acad.gwu.edu:~/
+
+Login to acad, delete the old public_html, unpack the website there, and run the fix html script.
+
+

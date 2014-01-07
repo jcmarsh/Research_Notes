@@ -2130,6 +2130,44 @@ Host size is all of player... do I need to compile all of it with dietlibc? That
 I also have to deal with the 64bit problem then.
 ** Syscalls
 I can at least see what syscalls are being made. 
+* <2013-12-30 Mon 10:55> Simple Controller, Complex Setup
+I still need to figure out why the simple controller isn't actually working.
+I'm considering running a packet capture program to compare between the packets sent. But it seems like that is a slightly round-about way to debug, since I have all the source.
+I ought to at least get the two controllers compiled to compare.
+Right... but that means losing my internet connection and thus Pandora. Lame. Because I can then no longer drown out Pablo and Andrei talking behind me.
+Andrei is leaving at 3. Maybe I should go read papers somewhere until then.
+To run the simple example (from ~/research/stage/experiments): python run_player.py ./configs/single_simple.cfg single_comp.world ./bitmaps/empty.png 
+Good news! I can run the tests and still have internet access.
+Bad news! I don't know why replacing glibc with dietlibc causes the controller to no longer work.
+Why did I think that wireshark would help? All it shows is that some of the packets send are different. Not exactly a revelation.
+Maybe it's time for second lunch.
+At least the meeting is over.
+Okay, getting there. Slowly.
+* <2014-01-02 Thu 12:32> controller + dietlibc bug
+Working on figuring out why the dietlibc version of the controllers doesn't work.
+** libstageplugin/p_position.cc
+Notice the ".cc" instead of ".c". Makes `find . -name "*.c"` not work so well.
+This file should represent the simulated position driver for stage
+With no dietlibc, the process message function is recieving the correct data.
+With dietlibc, it is not.
+** static_libplayerc/devices/dev_position2d.c
+With dietlibc, the set_cmd_vel function is recieving the correct arguments.
+* <2014-01-07 Tue 15:02> 
+I'm going to stay here until I figure this out.
+That is most likely a lie.
+** 64 bit myth
+player.h has a struct player_pose2d_t, which has three doubles (x, y, and theta)
+This is the data type being sent by position2d_set_cmd_vel (it is encapsulated in a player_position2d_cmd_vel_t).
+It is these values that are not coming through.
+So it would seem reasonable that the problem is with having a 32bit client and a 64bit host. But not so.
+** Clueless
+playerc_client_write in client.c is working just fine
+So it must be on the recieving end. Maybe because the structs are different from one side to the next? Seems unlikely.
+Time to check the packets, I suppose (since they where shown to be different on the wire)
+And by "check the packets", I mean playerc_write_packet.
+write_packet is good, at least right before the writing begins (Note: not checking the headers...)
+
+
 
 * USEFUL Things.
 ** bash
