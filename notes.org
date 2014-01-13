@@ -2166,8 +2166,75 @@ So it must be on the recieving end. Maybe because the structs are different from
 Time to check the packets, I suppose (since they where shown to be different on the wire)
 And by "check the packets", I mean playerc_write_packet.
 write_packet is good, at least right before the writing begins (Note: not checking the headers...)
+* <2014-01-08 Wed 14:43> Still here.
+Clearly did not stay until I figured it all out.
+* <2014-01-09 Thu 12:50> Gah.
+** sidequest: qemu resolution.
+Apparently qemu does not set the resolution; the guest OS does.
+So, time to find and edit xorg.conf, and hope I don't screw things up too bad.
+/etc/X11/xorg.conf - missing
+I think the problem may be that I am using ubuntu server.
+Okay, reboot and edit the grub settings. That is nice, since if it doesn't work I can change it easily.
+Set a new parameter in grub: vga=773 (should be 1024x768 256 colors)
+Looks the same... maybe. Now I'll try vga=775 (1280x1024)
+Changes don't seem to be taking.
+Great. Okay. I edited `/etc/default/grub`, and now the resolution is good... but ONLY for grub.
+Okay, you can set kernel parameters in /etc/default/grub by adding them onto the following line:
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash vga=792"
+Make sure to run `sudo update-grub` before reboot.
+Now I need to figure out how to resize the terminal window to match the new higher res.
+Not so easy.
+Installed `wmctrl` which does the trick... but seems to like to select QEMU to be the window from which QEMU was launched, not currently running.
+So first rename it with:
+  wmctrl -r :SELECT: -T "HAPPY"
+(SELECT means you actually click on the window... could use in next command instead I suppose)
+Then resize the real QEMU with:
+  wmctrl -r QEMU -e 0,0,0,1024,768
+** Main quest
+Mostly paper notes.
+Found a way to get a function's name from its pointer:
+http://stackoverflow.com/questions/351134/how-to-get-functions-name-from-functions-pointer-in-c
+Works... but didn't tell me too much.
+Now I'm digging into the xdr gened functions to see where things are going south.
+<2014-01-13 Mon 10:06> 
+Time to test some stuff out in c.
+Hmm... already did... and it seems to be working...
+** The packed data
+Actual: 0.3 0.2  0.1
+3F D3 33 33 33 33 33 33     3F C9 99 99 99 99 99 9A    3F B9 99 99 99 99 99 9A
 
+basic.c:
+playerc_position2d_set_cmd_vel(position2d, 0.3, 0.2, 0.1, 1);
 
+From "normal" version
+3f d3 33 33 33 33 33 33 3f c9 99 99 99 99 99 9a 3f b9 99 99 99 99 99 9a 00 00 00 01
+\---- 0.3 ------------| |---- 0.2 ------------| |---- 0.1 ------------| |---- 1 --|
+
+From dietlibc version
+33 33 33 33 3f d3 33 33 99 99 99 9a 3f c9 99 99 99 99 99 9a 3f b9 99 99 00 00 00 01
+\--     --| |--     --| |--     --| |--     --| |--     --| |--     --| |--  1  --|
+
+For some reason the dietlibc version is swapping the high order and low order 32 bits of the 64 bit doubles.
+Why would it do that?
+** xdr_float.c
+This is the file in dietlibc that implements the xdr_double... and there is a file in player: replace/xdr_float.c
+Seems like something is amiss.
+There is a lot of stuff in replace/... shit.
+I'm just going to copy and paste over the two functions xdr_double and xdr_float. Rebuild dietlibc and see what happens.
+Right... This time I'm going to update the dietlibc on the machine I am trying to test on.
+There are a few xdr files... from the CMakeLists.txt
+IF (NOT HAVE_XDR)
+    SET (replaceSrcs    ${replaceSrcs}
+                        xdr.c
+                        xdr_array.c
+                        xdr_float.c
+                        xdr_intXX_t.c
+                        xdr_mem.c
+                        xdr_sizeof.c)
+Okay, also need to copy over the files in replace/rpc/ (only two: types.h and xdr.h).
+Wow. That actually worked. I don't actually know what to do now.
+Go home I suppose.
+Tomorrow I can start working on getting the strace of all the system calls, then trying to get everything working inside a component.
 
 * USEFUL Things.
 ** bash
@@ -2278,6 +2345,9 @@ Scroll terminal / exit
   ^b+[ / q
 Rotate panes
 ^b+^o
+** wmctrl
+Resize the selected (click on) window
+  wmctrl -r :SELECT: -e 0,0,0,1024,768
 * Assembly Conventions
 ** Composite Syscall
 | x86_32 | x86_64 | Purpose    |
