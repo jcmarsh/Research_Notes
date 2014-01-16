@@ -2196,7 +2196,7 @@ Found a way to get a function's name from its pointer:
 http://stackoverflow.com/questions/351134/how-to-get-functions-name-from-functions-pointer-in-c
 Works... but didn't tell me too much.
 Now I'm digging into the xdr gened functions to see where things are going south.
-<2014-01-13 Mon 10:06> 
+* <2014-01-13 Mon 10:06> xdr problem solved
 Time to test some stuff out in c.
 Hmm... already did... and it seems to be working...
 ** The packed data
@@ -2235,6 +2235,62 @@ Okay, also need to copy over the files in replace/rpc/ (only two: types.h and xd
 Wow. That actually worked. I don't actually know what to do now.
 Go home I suppose.
 Tomorrow I can start working on getting the strace of all the system calls, then trying to get everything working inside a component.
+* <2014-01-14 Tue 14:33> Nothing
+strace of system calls
+I should also prepare to start meeting with Parmer weekly.
+* <2014-01-16 Thu 09:45> System Calls
+Now that the dietlibc version is actually working, it is time to get a listing of all syscalls made.
+First by the simpliest example, then with a more complicated on (will likely have to convert a python one to c).
+** Cleaning up test code
+Deleted debugging code. Slight changes committed. Very slight changes.
+** c_cont Strace
+There aught to be an easier way to move data from the VM to my computer.
+Oh, right, I can ssh into the host machine from the guest.
+Well, I have a bunch, time to figure out what they are.
+My guess is that a more complicated control program will only have more send calls. Maybe more complicated memory allocation?
+All of these can be found under http://linux.die.net/man/2/<SYSCALL NAME HERE>
+In order of the calls:
+*** execve("./basic", ["./basic"], [/* 16 vars */]) = 0
+Launches a file (a binary executable), and passes cmd line arguments along with environment arguements.
+*** set_thread_area({entry_number:-1 -> 6, base_addr:0xbf80a020, limit:1048575, seg_32bit:1, contents:0, read_exec_only:0, limit_in_pages:1, seg_not_present:0, useable:1}) = 0
+Sets something or other in the "Thread Local Storage" array.
+*** old_mmap(NULL, 33558528, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0xbf809f7008088018) = 0xb2fd7000
+Why "old" mmap? Apparently i386 was a pain (really?) and couldn't handle the five arguments that mmap needs. So one of these arguments is a pointer to an argument block.
+Is this call requesting 33558528 bytes? What is that? 30ish MBs?
+*** socket(PF_INET, SOCK_STREAM, IPPROTO_IP) = 3
+Creates a socket. Seems reasonable.
+*** setitimer(ITIMER_REAL, {it_interval={0, 0}, it_value={5, 0}}, NULL) = 0
+Set internal timer. Decrements in realtime (ITIMER_REAL). Should deliever a SIGALRM when expires.
+*** rt_sigaction(SIGALRM, NULL, {SIG_DFL, [], 0}, 8) = 0
+Sets what the process will do when it receives a signal, in this case a SIGALRM.
+*** connect(3, {sa_family=AF_INET, sin_port=htons(6666), sin_addr=inet_addr("192.168.23.201")}, 16) = 0
+Connects to a socket. In this case the computer running Player Server. 3 is the socket file descriptor.
+*** fcntl(3, F_GETFL)                       = 0x2 (flags O_RDWR)
+Manipulate a file descriptor. F_GETFL gets the file access mode and status flags. It looks like the "file" is the socket opened by connect.
+*** poll([{fd=3, events=POLLIN|POLLPRI|POLLERR|POLLHUP|POLLNVAL}], 1, 2000) = 1 ([{fd=3, revents=POLLIN}])
+Waits for the file (in this case 3... the socket) to be ready for i/o.
+*** recv(3, "Player v.3.1.0-svn\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 32, 0) = 32
+Receives a message from a socket (fd: 3).
+*** gettimeofday({1389889272, 856882}, NULL) = 0
+Likely what one would expect.
+*** send(3, "\0\0\0\0\0\0\0\0\0\0\0\1\0\0\0\0\0\0\0\3\0\0\0\5A\324\266\1\2766\327("..., 44, 0) = 44
+Send data over a socket (fd: 3).
+*** write(2, "playerc warning   : ", 20playerc warning   : )    = 20
+I don't really need this, but might be nice for debugging.
+** dietlibc 0.33 to 0.29
+May be a point of contention.
+I am using 0.33; composite currently has 0.29.
+Also, the Player client library needs to replace some of the xdr files (see what has been giving me trouble for the past few weeks).
+For xdr, make a librpcB that has the updated files.
+Alright, I'm going to try out 0.29.
+- The requested URL /pub/linux/libs/dietlibc/dietlibc-0.29.tar.bz2 was not found on this server.
+Seriously?
+Should be in the Composite source.
+It is in the Composite source, but with a lot of Composite related things. I can not just simply copy it over.
+So, for now at least, I'm going to have to just stick with 0.33, and make the change when I switch to working on components. Hopefully there are no problems.
+** Server / Client
+I just need a basic c server and client example which uses sockets.
+It's like a class exercise.
 
 * USEFUL Things.
 ** bash
