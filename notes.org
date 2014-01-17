@@ -2292,6 +2292,24 @@ So, for now at least, I'm going to have to just stick with 0.33, and make the ch
 I just need a basic c server and client example which uses sockets.
 It's like a class exercise.
 
+* <2014-01-17 Fri 11:28> Connect
+First, I need to get a sample server / client program.
+Well, first I'm going to eat lunch. Word.
+** Example program.
+The server is done, copied from an example online. Very simple.
+The client is going to be a pain because it needs to use dietlibc statically.
+Wow, that was actually very easy. It's almost as if I have been doing this for a while and have a worked out example already.
+Time to strace it to see the calls.
+*** strace of socket_client
+execve("./socket_client", ["./socket_client", "192.168.23.201"], [/* 16 vars */]) = 0
+set_thread_area({entry_number:-1 -> 6, base_addr:0xbf80ddf0, limit:1048575, seg_32bit:1, contents:0, read_exec_only:0, limit_in_pages:1, seg_not_present:0, useable:1}) = 0
+socket(PF_INET, SOCK_STREAM, IPPROTO_IP) = 3
+connect(3, {sa_family=AF_INET, sin_port=htons(6666), sin_addr=inet_addr("192.168.23.201")}, 16) = 0
+_exit(0)                                = ?
+** As a component.
+And an interface? Or something.
+
+
 * USEFUL Things.
 ** bash
 Last entered command: !!
