@@ -2309,6 +2309,21 @@ _exit(0)                                = ?
 ** As a component.
 And an interface? Or something.
 
+* <2014-01-24 Fri 12:27> Connect in Composite
+Was the previous demo program compiled with dietlibc. Oh, yeah it is.
+dietlibc has a function connect. It is likely this function that actually calls the syscall connect. I think.
+A few different components call the dietlibc version. So how does Composite interpose?
+Maybe the dietlibc code is edited? No easy well to tell with being able to get the original source to version 0.29.
+And assembly.
+As far as I can tell from socketcall.S in composite/src/components/lib/dietlibc-0.29/i386/, Composite does not interpose.
+At least not before the syscall is made.
+But, this could be because... so... it is likely that Composite still alows the regular linux calls to be made. I mean, it absolutely does. I've mucked with that code before.
+So the components which I am following probably use the linux connect syscall. But I should, for some reason.
+Maybe I should test this. I aught to get the client running as a component anyways.
+What am I doing?
+* <2014-01-27 Mon 12:48> 
+First, just a component in Composite which uses the linux syscalls.
+
 
 * USEFUL Things.
 ** bash
