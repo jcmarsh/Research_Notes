@@ -2334,6 +2334,11 @@ Last entered arugument: $_
 Fail out (so that registers can be examined:
     xor %rdi, %rdi
     call *%rdi 
+** emacs
+To highlight all text in a file (or at least a lot of it)
+C^ M^ h
+To indent highlighted code
+M^ \
 ** find
 > find . -name "*.c" -o -name "*.h"
 > find . -name "*.h" -exec grep -n "pte_t" {} \;
