@@ -2324,6 +2324,12 @@ What am I doing?
 * <2014-01-27 Mon 12:48> 
 First, just a component in Composite which uses the linux syscalls.
 
+* <2014-02-20 Thu 22:57> Just Saying
+For Player, doing a make and make install doesn't update the player client libraries (at least the python bindings).
+So, you have to do: make; make install; make clean; make; make install
+That sucks.
+Also, in .bashrc, make sure to add "/usr/local/lib/python2.7/site-packages/" to PYTHONPATH
+Also, I give up. I need to copy over the correct files from stage into player and rebuild.
 
 * USEFUL Things.
 ** bash
