@@ -2330,6 +2330,14 @@ So, you have to do: make; make install; make clean; make; make install
 That sucks.
 Also, in .bashrc, make sure to add "/usr/local/lib/python2.7/site-packages/" to PYTHONPATH
 Also, I give up. I need to copy over the correct files from stage into player and rebuild.
+* <2014-02-21 Fri 07:59> Home computer setup.
+It is not a simple thing, it would appear.
+dev_gps.c has speed and course, neither of which are in playerc.h copied from Stage/experiments/to_player
+Also a problem in the C++ bindings, but I'm not going to need those.
+Mapfile drives are not building because I do not have gtk... which one do I install? Trying libgtk-3-dev NOPE libgtk2.0-dev
+It is nice how player just silently turns off drivers it can't build.
+Finally works. Time to go to school and get to work.
+
 
 * USEFUL Things.
 ** bash
