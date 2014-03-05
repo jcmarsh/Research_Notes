@@ -48,10 +48,11 @@ void allregs(pid) {
 }
 
 int main(int argc, char** argv) {
-  pid_t childPID;
+  pid_t childPID = -1; pid_t currentPID = 0;
   long reg;
 
   childPID = fork();
+
 
   init_reg_names();
 
@@ -62,9 +63,9 @@ int main(int argc, char** argv) {
       execl("/bin/ls", "ls", NULL);
     } else {
       printf("I am the parent\n");
-      wait(NULL);
+      currentPID = wait(NULL);
       //     reg = ptrace(PTRACE_PEEKUSER, childPID, 8 * ORIG_RAX, NULL);
-      allregs(childPID);
+      allregs(currentPID);
       //printf("Whoa son, %ld syscall\n", reg);
       ptrace(PTRACE_CONT, childPID, NULL, NULL);
     }
