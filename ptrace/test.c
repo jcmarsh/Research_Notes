@@ -7,7 +7,11 @@
 #include <sys/user.h>
 #include <sys/wait.h>
 
-void printREGS(struct user_regs_struct * regs) {
+#define PRINT_REG(NAME, REG) printf("%s\t: %lX\t%lu\n", #NAME, REG->NAME, REG->NAME)
+
+  PRINT_REG(orig_rax, regs);
+
+void printRegs(struct user_regs_struct * regs) {
   printf("R15: %lX\n", regs->r15);
   printf("R14: %lX\n", regs->r14);
   printf("R13: %lX\n", regs->r13);
@@ -67,24 +71,25 @@ int main(int argc, char** argv) {
 	  return 0;
 	}
 
-	printREGS(&child_regs);
+	//printREGS(&child_regs);
+	printOrigRAX(&child_regs);
 
-	child_regs.r8 = 0xDEADBEEF;
-	child_regs.orig_rax = 0x1;
+	//child_regs.r8 = 0xDEADBEEF;
+	//child_regs.orig_rax = 64;
+	
+	//if (ptrace(PTRACE_SETREGS, child_pid, NULL, &child_regs) < 0) {
+	//  printf("SETREGS error.\n");
+	//  return 0;
+	//}
 
-	if (ptrace(PTRACE_SETREGS, child_pid, NULL, &child_regs) < 0) {
-	  printf("SETREGS error.\n");
-	  return 0;
-	}
+	//if (ptrace(PTRACE_GETREGS, child_pid, NULL, &child_regs) < 0) {
+	//  printf("GETREGS error.\n");
+	//  return 0;
+	//}
 
-	if (ptrace(PTRACE_GETREGS, child_pid, NULL, &child_regs) < 0) {
-	  printf("GETREGS error.\n");
-	  return 0;
-	}
+	//printREGS(&child_regs);
 
-	printREGS(&child_regs);
-
-	ptrace(PTRACE_CONT, child_pid, NULL, NULL);
+	ptrace(PTRACE_SYSCALL, child_pid, NULL, NULL);
       }
     }
   }

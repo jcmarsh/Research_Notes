@@ -2361,6 +2361,7 @@ M^ \
 ** gcc, usefull flags
   compile into assembly (no linking) > -S
   compile into an object file (library) > -c
+  Only run through preprocessor (Good for checking macros / defines) > -E
   add link / include path > -L / -I (each entry must be with separtate -I / -L)
   define a variable (same as #define) > -D Name=Value (-D Name is sufficient for #ifdef)
 ** GDB commands
@@ -2410,6 +2411,10 @@ Backup the .config
 > sudo mkinitramfs -o /boot/initrd.img-2.6.36 2.6.36
 > sudo update-grub
 Restart. Obviously the image name may be different.
+** Macros
+Here is a useful one: 
+  #definePRINT_REG(NAME, REG) printf("%s\t: %lX\t%lu\n", #NAME, REG->NAME, REG->NAME)
+    Prints a variable from a struct pointer.
 ** networking
 To restart, run following as root
 > /etc/init.d/networking restart
