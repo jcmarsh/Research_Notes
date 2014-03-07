@@ -1,6 +1,6 @@
 default:
-	gcc -o test test.c
-	gcc -o detect detect_fault.c
+	gcc -o test -g test.c
+	gcc -o detect -g detect_fault.c
 
 clean:
 	rm -f test
