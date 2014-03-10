@@ -1,45 +1,5 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
 
-#include <sys/ptrace.h>
-#include <sys/reg.h>
-#include <sys/user.h>
-#include <sys/wait.h>
-
-#define PRINT_REG(NAME, REG) printf("%s\t: %lX\t%lu\n", #NAME, REG->NAME, REG->NAME)
-
-  PRINT_REG(orig_rax, regs);
-
-void printRegs(struct user_regs_struct * regs) {
-  printf("R15: %lX\n", regs->r15);
-  printf("R14: %lX\n", regs->r14);
-  printf("R13: %lX\n", regs->r13);
-  printf("R12: %lX\n", regs->r12);
-  printf("RBP: %lX\n", regs->rbp);
-  printf("RBX: %lX\n", regs->rbx);
-  printf("R11: %lX\n", regs->r11);
-  printf("R10: %lX\n", regs->r10);
-  printf("R9:  %lX\n", regs->r9);
-  printf("R8:  %lX\n", regs->r8);
-  printf("RAX: %lX\n", regs->rax);
-  printf("RCX: %lX\n", regs->rcx);
-  printf("RDX: %lX\n", regs->rdx);
-  printf("RSI: %lX\n", regs->rsi);
-  printf("RDI: %lX\n", regs->rdi);
-  printf("ORIG_RAX: %lX\n", regs->orig_rax);
-  printf("RIP: %lX\n", regs->rip);
-  printf("CS:  %lX\n", regs->cs);
-  printf("EFLAGS: %lX\n", regs->eflags);
-  printf("RSP: %lX\n", regs->rsp);
-  printf("SS:  %lX\n", regs->ss);
-  printf("FS_BASE: %lX\n", regs->fs_base);
-  printf("GS_BASE: %lX\n", regs->gs_base);
-  printf("DS:  %lX\n", regs->ds);
-  printf("ES:  %lX\n", regs->es);
-  printf("FS:  %lX\n", regs->fs);
-  printf("GS:  %lX\n", regs->gs);
-}
+#include "utility.h"
 
 int main(int argc, char** argv) {
   pid_t child_pid = -1;
@@ -72,7 +32,7 @@ int main(int argc, char** argv) {
 	}
 
 	//printREGS(&child_regs);
-	printOrigRAX(&child_regs);
+	PRINT_REG(orig_rax, (&child_regs));
 
 	//child_regs.r8 = 0xDEADBEEF;
 	//child_regs.orig_rax = 64;
