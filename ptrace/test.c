@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 	  return 0;
 	}
 
-	//printREGS(&child_regs);
+	//printRegs(&child_regs);
 	PRINT_REG(orig_rax, (&child_regs));
 
 	//child_regs.r8 = 0xDEADBEEF;
