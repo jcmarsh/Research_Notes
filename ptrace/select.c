@@ -8,9 +8,6 @@ struct replica {
   pid_t pid; // The pid of the thread
   int priority; // Not yet implemented
   int pipefd[2]; // pipe to communicate with controller
-  // Looks like file descriptors are going to be the way to actually deal with this.
-  //  FILE* from_child; // TODO: Need better names.
-  //  FILE* out_of_child;
   // Possibly put a pointer to entry function
 };
   
@@ -29,15 +26,12 @@ unsigned long fib(int n) {
 int main(int argc, char** argv) {
   pid_t currentPID = 0;
   struct replica replicas[3];
-  int status = -1;
-  int finished_count = 0;
   int write_out;
   int flags;
   int isChild = 0;
   int index = 0, jndex = 0;
-  unsigned long result = 0;
   char buffer[BUFF_SIZE] = {0};
-  struct user_regs_struct child_regs;
+  //  struct user_regs_struct child_regs;
 
   // select stuff
   int nfds = 0;
@@ -60,7 +54,6 @@ int main(int argc, char** argv) {
     printf("File descriptors: %d, %d\n", replicas[index].pipefd[0], replicas[index].pipefd[1]);
     
     // Need to set to be non-blocking for reading.
-    // May no longer need
     flags = fcntl(replicas[index].pipefd[0], F_GETFL, 0);
     fcntl(replicas[index].pipefd[0], F_SETFL, flags | O_NONBLOCK);
 
@@ -97,7 +90,6 @@ int main(int argc, char** argv) {
 
   // Should add asserts here for sanity?
 
-  
   if (isChild) {
     ptrace(PTRACE_TRACEME, 0, NULL, NULL);
     //    raise(SIGCONT);
@@ -132,47 +124,6 @@ int main(int argc, char** argv) {
 	}
 
       }
-      
-      // Check for output
-      // Right now everything is done on the ptrace signals... not sure if that is good or bad.
-
-      // ptrace handling
-      // currentPID = waitpid(-1, &status, 0); // Consider adding WNOHANG as option
-
-      //      if (ptrace(PTRACE_GETREGS, currentPID, NULL, &child_regs) < 0) {
-      //	printf("GETREGS error.\n");
-      //      }
-
-      /*
-      // find replica to get correct pipe
-      for (index = 0; index < CHILD_NUM; index++) {
-	if (replicas[index].pid == currentPID) {
-	  printf("Scanning from: %lu\n", currentPID);
-	  read(replicas[index].pipefd[0], buffer, BUFF_SIZE);
-	}
-      }
-    
-      // Print out the buffer?
-      for (index = 0; index < BUFF_SIZE; index++) {
-	if (buffer[index] != '\0') {
-	  printf("%c", buffer[index]);
-	} else {
-	  printf("\n");
-	  break;
-	}
-      }
-
-      if (WIFEXITED(status) || WIFSIGNALED(status)) {
-	printf("Exit status from pid: %lu\n", currentPID);
-	finished_count++;
-	if (finished_count == CHILD_NUM) {
-	  break;
-	}
-      }
-
-      ptrace(PTRACE_SYSCALL, currentPID, NULL, NULL);
-
-      */
     }
   }
 
