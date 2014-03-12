@@ -44,6 +44,10 @@ int main(int argc, char** argv) {
   struct timeval tv;
   int retval;
 
+  // Error!
+  int insert_error = 1;
+  struct user_regs_struct copy_regs;
+
   FD_ZERO(&read_fds);
   tv.tv_sec = SEC;
   tv.tv_usec = USEC;
@@ -112,18 +116,45 @@ int main(int argc, char** argv) {
 
       // Insert an error?
       // Always insert an error for the first one
-      kill(replicas[2].pid, SIGUSR1);
+      if (insert_error) {
+	kill(replicas[2].pid, SIGCONT);
+      }
 
       // Check for stopped processes
       // PROBLEMS HERE.
       currentPID = waitpid(-1, &status, WNOHANG);
-      printf("PID returned: %u\n", currentPID);
+      printf("PID returned: %d\n", currentPID);
+      if (WIFEXITED(status)) {
+	printf("EXITED %d\n", currentPID);
+      }
+      if (WIFSIGNALED(status)) {
+	printf("SIGNALED %d\n", currentPID);
+      }
       if (WIFSTOPPED(status)) {
-	printf("STOPPED\n");
+	printf("STOPPED %d\n", currentPID);
+	printf("\tSignal: %d\n", WSTOPSIG(status));
+	insert_error = 0;
+	// Eh... try to get the regs...
+	if (ptrace(PTRACE_GETREGS, currentPID, NULL, &copy_regs) < 0) {
+	  perror("GETREGS error.");
+	}
+	printRegs(&copy_regs);
+
+	copy_regs.rbx = 14;
+
+	printRegs(&copy_regs);
+	
+	if(ptrace(PTRACE_SETREGS, currentPID, NULL, &copy_regs) < 0) {
+	  perror("SETREGS error.");
+	}
+
+	ptrace(PTRACE_CONT, currentPID, NULL, NULL);
       }
       if (WSTOPSIG(status) == SIGUSR1) {
 	printf("Hells yeah!\n");
       }
+
+      status = -1;
       //cont.
 
       retval = select(nfds, &read_fds, NULL, NULL, &tv);
