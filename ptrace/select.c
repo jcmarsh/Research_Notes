@@ -2,6 +2,8 @@
 
 #define CHILD_NUM 3
 #define BUFF_SIZE 100
+#define SEC 0
+#define USEC 500000
 
  // Represents one redundant execution, implemented as a thread
 struct replica {
@@ -9,6 +11,7 @@ struct replica {
   int priority; // Not yet implemented
   int pipefd[2]; // pipe to communicate with controller
   // Possibly put a pointer to entry function
+  unsigned long last_result;
 };
   
 
@@ -25,12 +28,14 @@ unsigned long fib(int n) {
 
 int main(int argc, char** argv) {
   pid_t currentPID = 0;
-  struct replica replicas[3];
+  struct replica replicas[CHILD_NUM];
   int write_out;
   int flags;
   int isChild = 0;
-  int index = 0, jndex = 0;
+  int index = 0;
+  int status = -1;
   char buffer[BUFF_SIZE] = {0};
+  int finished_count = 0;
   //  struct user_regs_struct child_regs;
 
   // select stuff
@@ -40,8 +45,8 @@ int main(int argc, char** argv) {
   int retval;
 
   FD_ZERO(&read_fds);
-  tv.tv_sec = 10;
-  tv.tv_usec = 0;
+  tv.tv_sec = SEC;
+  tv.tv_usec = USEC;
 
   // Init three replicas
   for (index = 0; index < CHILD_NUM; index++) {
@@ -67,6 +72,7 @@ int main(int argc, char** argv) {
 
     replicas[index].pid = -1;
     replicas[index].priority = -1;
+    replicas[index].last_result = 0;
   }
     
     
@@ -99,31 +105,57 @@ int main(int argc, char** argv) {
   } else {
     printf("I AM THE OVERLORD\n");
     while(1) {
+      if (finished_count == CHILD_NUM) {
+	// All are finished executing, time to vote and join.
+	break;
+      }
+
+      // Insert an error?
+      // Always insert an error for the first one
+      kill(replicas[2].pid, SIGUSR1);
+
+      // Check for stopped processes
+      // PROBLEMS HERE.
+      currentPID = waitpid(-1, &status, WNOHANG);
+      printf("PID returned: %u\n", currentPID);
+      if (WIFSTOPPED(status)) {
+	printf("STOPPED\n");
+      }
+      if (WSTOPSIG(status) == SIGUSR1) {
+	printf("Hells yeah!\n");
+      }
+      //cont.
+
       retval = select(nfds, &read_fds, NULL, NULL, &tv);
+
+      tv.tv_sec = SEC;
+      tv.tv_usec = USEC;
+
 
       if (retval == -1) {
 	perror("select()");
-      } else if (retval == 0) {
-	printf("Nothing yet...\n");
+	// I think this behaviour is off because the fds do not block.
+	//      } else if (retval == 0) {
+	//	printf("Nothing...\n");
       } else {
-	printf("Something to read!");
+	printf("Something to read: %d\n", retval);
 	// Data to read! Loop through and print
 	for (index = 0; index < CHILD_NUM; index++) {
 	  retval = read(replicas[index].pipefd[0], buffer, BUFF_SIZE);
 	  if (retval > 0) {
-	    // Print out the buffer
-	    for (jndex = 0; jndex < BUFF_SIZE; jndex++) {
-	      if (buffer[jndex] != '\0') {
-		printf("%c", buffer[jndex]);
-	      } else {
-		printf("\n");
-		break;
-	      }
-	    }
+	    replicas[index].last_result = atol(buffer);
+	    printf("Result %d:%lu\n", index, replicas[index].last_result);
+	    memset(buffer, 0, BUFF_SIZE);
+	    finished_count++;
 	  }
 	}
-
       }
+    }
+
+    printf("All Done!\n");
+
+    for (index = 0; index < CHILD_NUM; index++) {
+      printf("\tResult %d: %lu\n", index, replicas[index].last_result);
     }
   }
 
