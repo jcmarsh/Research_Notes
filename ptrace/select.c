@@ -12,10 +12,25 @@ struct replica {
   int pipefd[2]; // pipe to communicate with controller
   // Possibly put a pointer to entry function
   unsigned long last_result;
-};
-  
+};  
 
 const int starting_n = 42;
+
+// Modify the register structure to have one (uniformily distributed) bit flip.
+void injectRegError(struct user_regs_struct * regs) {
+
+
+  // Create a new bitmask with 1 bit set true... xor 
+  // Ought to be a long, no?
+  unsigned long error_mask = 0;
+
+  // size of regs struct?
+  printf("Reg struct size: %zd\n", sizeof(struct user_regs_struct));
+
+  // Select register
+  
+  // Select bit in register
+}
 
 // Find the nth fibonacci number
 unsigned long fib(int n) {
@@ -36,7 +51,6 @@ int main(int argc, char** argv) {
   int status = -1;
   char buffer[BUFF_SIZE] = {0};
   int finished_count = 0;
-  //  struct user_regs_struct child_regs;
 
   // select stuff
   int nfds = 0;
@@ -140,6 +154,8 @@ int main(int argc, char** argv) {
 	}
 	printRegs(&copy_regs);
 
+	// Need to fix injection!
+	injectRegError(&copy_regs);
 	copy_regs.rbx = 14;
 
 	printRegs(&copy_regs);

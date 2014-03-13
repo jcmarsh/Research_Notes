@@ -13,6 +13,8 @@
 
 #define PRINT_REG(NAME, REG) printf("%s\t: %lX\t%lu\n", #NAME, REG->NAME, REG->NAME)
 
+#if __WORDSIZE == 64
+
 void printRegs(struct user_regs_struct * regs) {
   PRINT_REG(r15, regs);
   PRINT_REG(r14, regs);
@@ -42,3 +44,29 @@ void printRegs(struct user_regs_struct * regs) {
   PRINT_REG(fs, regs);
   PRINT_REG(gs, regs);
 }
+
+#else // 32 bit wordsize... x86
+
+void printRegs(struct user_regs_struct * regs) {
+  PRINT_REG(ebx, regs);
+  PRINT_REG(ecx, regs);
+  PRINT_REG(edx, regs);
+  PRINT_REG(esi, regs);
+  PRINT_REG(edi, regs);
+  PRINT_REG(ebp, regs);
+  PRINT_REG(eax, regs);
+  PRINT_REG(xds, regs);
+  PRINT_REG(xes, regs);
+  PRINT_REG(xfs, regs);
+  PRINT_REG(xgs, regs);
+  PRINT_REG(orig_eax, regs);
+  PRINT_REG(eip, regs);
+  PRINT_REG(xcs, regs);
+  PRINT_REG(eflags, regs);
+  PRINT_REG(esp, regs);
+  PRINT_REG(xss, regs);
+}
+
+#endif // __WORDSIZE
+
+
