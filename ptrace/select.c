@@ -80,6 +80,8 @@ int main(int argc, char** argv) {
   char outcome = 'B'; // B for BENIGN
   unsigned long prev_result;
 
+  int countdown = 20;
+
   FD_ZERO(&read_fds);
   tv.tv_sec = SEC;
   tv.tv_usec = USEC;
@@ -149,6 +151,13 @@ int main(int argc, char** argv) {
 	break;
       }
 
+      countdown--;
+      if (countdown < 0) {
+	// Time's up
+	outcome = 'T'; // T for TIMEOUT
+	break;
+      }
+
       // Insert an error?
       // Always insert an error for the first one
       if (insert_error) {
@@ -170,36 +179,50 @@ int main(int argc, char** argv) {
 	//	printf("STOPPED %d\n", currentPID);
 	//	printf("\tSignal: %d\n", WSTOPSIG(status));
 	switch (signal) {
-	  case SIGCONT:
-	    // Hopefully was the signal we sent... so insert an error
-	    // I don't think I can count on this. Should send an alarm? or maybe a user defined signal.
-	    if (insert_error == 0) {
-	      // Do nothing, error already has been inserted
-	    } else {
-	      insert_error = 0;
+	case SIGCONT:
+	  // Hopefully was the signal we sent... so insert an error
+	  // NEED TO CHECK THIS. I think it is the source of the Input/Output error on setregs
+	  // I don't think I can count on this. Should send an alarm? or maybe a user defined signal.
+	  if (insert_error == 0) {
+	    // Do nothing, error already has been inserted
+	  } else {
+	    insert_error = 0;
 	    
-	      if (ptrace(PTRACE_GETREGS, currentPID, NULL, &copy_regs) < 0) {
-		perror("GETREGS error.");
-	      }
-
-	      // Inject an error: for now a bit flip in a register
-	      injectRegError(&copy_regs);
-
-	      if(ptrace(PTRACE_SETREGS, currentPID, NULL, &copy_regs) < 0) {
-		perror("SETREGS error.");
-	      }
+	    if (ptrace(PTRACE_GETREGS, currentPID, NULL, &copy_regs) < 0) {
+	      perror("GETREGS error.");
 	    }
-	    ptrace(PTRACE_CONT, currentPID, NULL, NULL);
-	    break;
-	  case SIGSEGV:
-	    //	    printf("Invalid memory reference! Kill process\n");
-	    kill(currentPID, SIGKILL);
-	    outcome = 'C'; // C for CRASH
-	    finished_count++;
-	    break;
-	  default:
-	    printf("Unhandled signal: %d\n", signal);
-	    break;
+
+	    // Inject an error: for now a bit flip in a register
+	    injectRegError(&copy_regs);
+
+	    if(ptrace(PTRACE_SETREGS, currentPID, NULL, &copy_regs) < 0) {
+	      perror("SETREGS error:");
+	    }
+	  }
+	  ptrace(PTRACE_CONT, currentPID, NULL, NULL);
+	  break;
+	case SIGILL:
+	  // Illegal Instruction: Kill process. #4
+	  kill(currentPID, SIGKILL);
+	  outcome = 'C'; // C for CRASH
+	  finished_count++;
+	  break;
+	case SIGBUS:
+	  // Bus error (bad memory access): Kill process. #7
+	  kill(currentPID, SIGKILL);
+	  outcome = 'C'; // C for CRASH
+	  finished_count++;
+	  break;
+	case SIGSEGV:
+	  // Invalid memory reference: Kill process. #11
+	  kill(currentPID, SIGKILL);
+	  outcome = 'C'; // C for CRASH
+	  finished_count++;
+	  break;
+
+	default:
+	  printf("Unhandled signal: %d\n", signal);
+	  break;
 	}
       }
 
@@ -238,7 +261,7 @@ int main(int argc, char** argv) {
     for (index = 0; index < CHILD_NUM; index++) {
       printf("\tResult %d: %lu\n", index, replicas[index].last_result);
       if (prev_result != replicas[index].last_result) {
-	if (outcome != 'C') {
+	if (outcome != 'C' && outcome != 'T') {
 	  outcome = 'S'; // S for SILENT DATA CORRUPTION!
 	}
       }
