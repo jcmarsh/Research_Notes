@@ -2338,6 +2338,24 @@ Mapfile drives are not building because I do not have gtk... which one do I inst
 It is nice how player just silently turns off drivers it can't build.
 Finally works. Time to go to school and get to work.
 
+* <2014-03-25 Tue 19:55> Setting up QEMU client
+** Setup qemu vm
+check previous instruction
+** Install player
+Hopefully the standard install works fine.
+wget http://sourceforge.net/projects/playerstage/files/Player/3.0.2/player-3.0.2.tar.gz
+sudo apt-get install build-essential cmake-curses-gui git-core  swig libjpeg62-dev libpng12-dev python-dev pkg-config
+Also need libltdl-dev if you want support for shared objects. You do.
+Need to LD_LIBRARY_PATH to have /usr/local/lib or /usr/local/lib64
+** Install PINT
+https://github.com/jcmarsh/PINT.git
+https://github.com/jcmarsh/Stage.git (no need to build, just need the to_player stuff and configs)
+** Networking
+Did this before... check qemu_net in this repo.
+need openvpn
+Oh yeah, and edit the qemu-ifup and down scripts to match the host.
+Don't forget to copy the scripts after changes.
+
 
 * USEFUL Things.
 ** bash
