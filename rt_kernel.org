@@ -1,0 +1,50 @@
+<2014-04-22 Tue 15:05>
+I'm going to have to run the Real Time Kernel patch, on two computers. So I should...
+
+Okay, first I'm going to change the line wrapping behavior
+(global-visual-line-mode t) to init file (is that .emacs?)
+Ha! That worked.
+
+Okay, basic steps... I think. Easy, right?
+* Get Kernel
+What is my current kernel?
+> uname -a
+3.2.0-60-generic
+Download source?
+Oh, need to know the stupid animal: 12.04 is Precise Pangolin
+Did this in ~/research : 
+ACTUALLY... this is kernel 3.2.0-60, I need one that has a RT patch available
+So... Grab two that match.. I'm trying 3.2.55
+Kernel: https://www.kernel.org/pub/linux/kernel/v3.x/
+RTPatch: https://www.kernel.org/pub/linux/kernel/projects/rt/3.2/
+Install needed tools
+sudo apt-get build-dep linux-image-`uname -r` ... I wonder if this is okay
+Unzip and de-tar (patch only needs de-zipping)
+> gzip -d name.tar.gz
+> tar xf name.tar
+* Patch Kernel
+go into patch source directory and PATCH
+> patch -p1 <../patch.version.patch
+* Build Kernel
+I'm going to hope that my current config is just fine.
+Get building?
+Eh?
+> sudo apt-get install kernel-package
+https://help.ubuntu.com/12.10/installation-guide/powerpc/kernel-baking.html
+> make-kpkg clean
+> fakeroot make-kpkg --initrd --revision=3.2.55.RTpatch kernel_image
+configs?!?!
+5 (level of RT, fully premptable kernel)
+Used defaults for the rest...
+I forgot how long this takes. Should probably look into that whole -j thing.
+* Install Kernel
+
+* Test / Verify Kernel
+* Resources (may or not be useful)
+Mostly:
+https://wiki.ubuntu.com/Kernel/BuildYourOwnKernel
+https://rt.wiki.kernel.org/index.php/RT_PREEMPT_HOWTO
+https://help.ubuntu.com/12.10/installation-guide/powerpc/kernel-baking.html
+But also:
+https://help.ubuntu.com/community/Kernel/Compile
+https://wiki.ubuntu.com/KernelCustomBuild
