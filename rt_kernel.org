@@ -38,8 +38,19 @@ configs?!?!
 Used defaults for the rest...
 I forgot how long this takes. Should probably look into that whole -j thing.
 * Install Kernel
-
+> sudo dpkg -i ../linux-image-3.2.55-rt81_3.2.55.RTpatch_amd64.deb
+Should probably mess with grub settings
+Edit /etc/default/grub with root priveledges
+GRUB_HIDDEN_TIMEOUT= (NOTHING here, just a newline)
+Set GRUB_TIMEOUT as desired
+> sudo update-grub
 * Test / Verify Kernel
+Restart! Should boot RT patched kernel as default (well, on my desktop it did. Not so much on my laptop).
+First check: uname -r (or -a. Whatever.)
+All of the other methods ("ps ax" and "cat /proc/interrupts" seem outdated and I can't tell if they are usefull.
+From the runtime detection example, check uname and:
+cat /sys/kernel/realtime should == 1 (and exist for that matter).
+
 * Resources (may or not be useful)
 Mostly:
 https://wiki.ubuntu.com/Kernel/BuildYourOwnKernel
