@@ -129,7 +129,7 @@ int printMaps( ){
   // open /proc/self/maps
   mapsfile = fopen("/proc/self/maps", "r");
   if (mapsfile == NULL) {
-    printf("Failed to open /proc/self/maps\n");
+    perror("Failed to open /proc/self/maps");
     return -1;
   }
 

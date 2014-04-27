@@ -1,9 +1,17 @@
 #include <stdio.h>
 
+// Semaj's
+// Both seem to work fine on my computer... 
+// But Semaj's compiles for 32 bit as well.
+#define rdtscll(val) __asm__ __volatile__("rdtsc" : "=A" (val))
+
+// Mine*
+/*
 #define rdtscll(value)				       \
   __asm__ ("rdtsc\n\t"				       \
 	   "shl $(32), %%rdx\n\t"		       \
 	   "or %%rax, %%rdx" : "=d" (value) : : "rax")
+*/
 
 void food() {
   unsigned long ticks = 80085;
@@ -33,7 +41,7 @@ void main() {
   test_func();
   rdtscll(end);
 
-  printf("Not much. You? %d\n", end - start);
+  printf("Not much. You? %ld\n", end - start);
 }
   
 

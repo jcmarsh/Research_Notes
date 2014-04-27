@@ -45,7 +45,9 @@ int main(int argc, char** argv) {
   MUHAHAHA = malloc(sizeof(double) * 32768);
 
   //mlockall(MCL_CURRENT);
-  mlockall(MCL_FUTURE);
+  mlockall(MCL_CURRENT || MCL_FUTURE); // -- calling this here causes open("/proc/self/maps") to fail with resource temporarily unavailable
+  // the problem is that you must run as super user.
+  perror("Sigh.");
 
   //  printMaps();
 
