@@ -12,12 +12,10 @@
 #include <string.h>
 #include <unistd.h>
 
-int recvfd(int sock, int* received_fd) {
+int recvfd(int sock, int* read_fd, int* write_fd) {
   struct msghdr hdr;
   struct iovec data;
   int retval;
-
-  char cmsgbuf[CMSG_SPACE(sizeof(int))];
 
   char dummy = '*';
 
@@ -31,9 +29,9 @@ int recvfd(int sock, int* received_fd) {
   hdr.msg_iovlen = 1;
   hdr.msg_flags = 0;
 
-  struct cmsghdr *cmsg = malloc(CMSG_LEN(sizeof(int)));
+  struct cmsghdr *cmsg = malloc(CMSG_LEN(sizeof(int) * 2));
   hdr.msg_control = cmsg;
-  hdr.msg_controllen = CMSG_LEN(sizeof(int));
+  hdr.msg_controllen = CMSG_LEN(sizeof(int) * 2);
 
   retval = recvmsg(sock, &hdr, 0);
   if (retval < 0) {
@@ -41,11 +39,13 @@ int recvfd(int sock, int* received_fd) {
     return(-1);
   }
 
-  *received_fd = *(int *)CMSG_DATA(cmsg);
+  *read_fd = ((int *)CMSG_DATA(cmsg))[0];
+  *write_fd = ((int *)CMSG_DATA(cmsg))[1];
 }
 
 int main(int argc, char ** argv) {
   int fds_in;
+  int fds_out;
   int retval;
   struct sockaddr_un address;
   int  socket_fd, nbytes;
@@ -71,7 +71,7 @@ int main(int argc, char ** argv) {
   }
 
   printf("\tRetrieve FD\n");
-  retval = recvfd(socket_fd, &fds_in);
+  retval = recvfd(socket_fd, &fds_in, &fds_out);
   printf("\tNew fd: %d\n", fds_in);
 
   retval = read(fds_in, buffer, 256);
@@ -80,6 +80,8 @@ int main(int argc, char ** argv) {
   }
 
   printf("MESSAGE FROM SERVER: %d, %s\n", retval,  buffer);
+
+  retval = write(fds_out, "suck it", 8);
 
   close(socket_fd);
 
