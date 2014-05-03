@@ -11,7 +11,13 @@
 int main(int argc, char ** argv) {
   pid_t currentPID;
   int pipefd[2];
-  int fifooo;
+  int fifo_out;
+  int fifo_in;
+  char buffer[100];
+  char * msg = "Howdy!";
+
+  // create a pipe
+  // pipe(pipefd); // Here the example works.
 
   // fork / exec a child
   currentPID = fork();
@@ -29,17 +35,24 @@ int main(int argc, char ** argv) {
   }
   
   // create a named pipe
-  mkfifo("./fifo", 0666);
-  fifooo = open("./fifo", O_WRONLY);
-
-  // create a pipe
-  pipe(pipefd);
+  mkfifo("./fifo_out", 0666);
+  fifo_in = open("./fifo_out", O_RDONLY);
+  mkfifo("./fifo_in", 0666);
+  fifo_out = open("./fifo_in", O_WRONLY);
 
   // send fd of pipe to child through named pipe
-  read(fifooo);
+  read(fifo_in, buffer, 100);
   printf("I have a reader!\n");
 
+  printf("They said: %s\n", buffer);
+
+  // create a pipe
+  pipe(pipefd); // Here the example breaks.
+
+  write(fifo_out, pipefd, sizeof(int) * 2);  
+
   // read / write / be happy
+  write(pipefd[1], msg, 7);
 
   return 0;
 }
