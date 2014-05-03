@@ -1,14 +1,18 @@
 // vote.c
 // Reference: http://www.thomasstover.com/uds.html
 // Reference: http://infohost.nmt.edu/~eweiss/222_book/222_book/0201433079/ch17lev1sec4.html
+// Reference: http://stackoverflow.com/questions/4489433/sending-file-descriptor-over-unix-domain-socket-and-select
 // James Marshall
 
 #include <fcntl.h> // needed to deal with pipes
+#include <linux/un.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+//#include <sys/un.h>
 #include <sys/user.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
 int forkSingle() {
@@ -28,6 +32,44 @@ int forkSingle() {
     return -1;
   }
   return 0;
+}
+
+// From the SO post
+int sendfd(int sock, int fd)
+{
+  struct msghdr hdr;
+  struct iovec data;
+
+  char cmsgbuf[CMSG_SPACE(sizeof(int))];
+
+  char dummy = '*';
+  data.iov_base = &dummy;
+  data.iov_len = sizeof(dummy);
+
+  memset(&hdr, 0, sizeof(hdr));
+  hdr.msg_name = NULL;
+  hdr.msg_namelen = 0;
+  hdr.msg_iov = &data;
+  hdr.msg_iovlen = 1;
+  hdr.msg_flags = 0;
+
+  hdr.msg_control = cmsgbuf;
+  hdr.msg_controllen = CMSG_LEN(sizeof(int));
+
+  struct cmsghdr* cmsg = CMSG_FIRSTHDR(&hdr);
+  cmsg->cmsg_len   = CMSG_LEN(sizeof(int));
+  cmsg->cmsg_level = SOL_SOCKET;
+  cmsg->cmsg_type  = SCM_RIGHTS;
+
+  *(int*)CMSG_DATA(cmsg) = fd;
+
+  int n = sendmsg(sock, &hdr, 0);
+
+  if(n == -1) {
+    perror("sendmsg() failed");
+  }
+
+  return n;
 }
 
 int main(int argc, char ** argv) {
@@ -71,22 +113,22 @@ int main(int argc, char ** argv) {
     return 1;
   }
 
-  connection_fd = accept(socket_fd, (struct sockaddr *) &address, &address_length)) > -1) {
-    printf("connection made!");
+  if ((connection_fd = accept(socket_fd, (struct sockaddr *) &address, &address_length)) > -1) {
+    printf("connection made!\n");
 
-    // send fd of pipe to child through named pipe
-    (fifo_in, buffer, 100);
-    printf("I have a reader!\n");
+    // create a pipe
+    pipe(pipefd);  
 
-  printf("They said: %s\n", buffer);
+    sendfd(connection_fd, pipefd[0]); // send read end to client
+  }
 
-  // create a pipe
-  pipe(pipefd); // Here the example breaks.
-
-  write(fifo_out, pipefd, sizeof(int) * 2);  
+  printf("Writing to pipe!\n");
 
   // read / write / be happy
   write(pipefd[1], msg, 7);
+
+  close(socket_fd);
+  unlink("./fd_server");
 
   return 0;
 }
