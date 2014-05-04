@@ -35,12 +35,12 @@ int forkSingle() {
 }
 
 // From the SO post
-int sendfd(int sock, int fd)
+int sendfd(int sock, int fd_out, int fd_in)
 {
   struct msghdr hdr;
   struct iovec data;
 
-  char cmsgbuf[CMSG_SPACE(sizeof(int))];
+  char cmsgbuf[CMSG_SPACE(sizeof(int) * 2)];
 
   char dummy = '*';
   data.iov_base = &dummy;
@@ -54,14 +54,15 @@ int sendfd(int sock, int fd)
   hdr.msg_flags = 0;
 
   hdr.msg_control = cmsgbuf;
-  hdr.msg_controllen = CMSG_LEN(sizeof(int));
+  hdr.msg_controllen = CMSG_LEN(sizeof(int) * 2);
 
   struct cmsghdr* cmsg = CMSG_FIRSTHDR(&hdr);
-  cmsg->cmsg_len   = CMSG_LEN(sizeof(int));
+  cmsg->cmsg_len   = CMSG_LEN(sizeof(int) * 2);
   cmsg->cmsg_level = SOL_SOCKET;
   cmsg->cmsg_type  = SCM_RIGHTS;
 
-  *(int*)CMSG_DATA(cmsg) = fd;
+  ((int*)CMSG_DATA(cmsg))[0] = fd_out;
+  ((int*)CMSG_DATA(cmsg))[1] = fd_in;
 
   int n = sendmsg(sock, &hdr, 0);
 
@@ -78,6 +79,7 @@ int main(int argc, char ** argv) {
   socklen_t address_length;
 
   int pipefd[2];
+  int pipe_in[2];
   char buffer[256];
   char * msg = "Howdy!";
 
@@ -118,14 +120,19 @@ int main(int argc, char ** argv) {
 
     // create a pipe
     pipe(pipefd);  
+    pipe(pipe_in);
 
-    sendfd(connection_fd, pipefd[0]); // send read end to client
+    sendfd(connection_fd, pipefd[0], pipe_in[1]); // send read end to client
   }
 
   printf("Writing to pipe!\n");
 
   // read / write / be happy
   write(pipefd[1], msg, 7);
+
+  read(pipe_in[0], buffer, 256);
+
+  printf("Voter recieved back: %s\n", buffer);
 
   close(socket_fd);
   unlink("./fd_server");
