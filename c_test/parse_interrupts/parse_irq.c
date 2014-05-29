@@ -36,7 +36,10 @@ long oldParse() {
   int col_num = 0;
   
   char *cell_value;
-  int target_rows[] = {14, 15, 17, 19, 20, 21, 25};
+  //int target_num = 6;
+  //int target_rows[] = {14, 15, 17, 19, 20, 21, 25};
+  int target_num = 1;
+  int target_rows[] = {25};
   int row_index = 0;
   long total = 0;
 
@@ -51,7 +54,7 @@ long oldParse() {
 	cell_value = strtok(NULL, token);
 	if (col_num == TARGET_COL) {
 	  total += atol(cell_value);
-	  if (row_index > 6) {
+	  if (row_index >= target_num) {
 	    return total;
 	  }
 	}
@@ -75,7 +78,6 @@ int main(int argc, char ** argv) {
 
   int result_count = 0;
   int threshold = 0; // anything over this will be recorded (set by args)
-
 
   long results_time[MAX_RESULT_COUNT];
 
