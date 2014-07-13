@@ -1,0 +1,26 @@
+* <2014-07-13 Sun 11:16> First go
+Already installed cFE and OSAL on my laptop. I have the associated guides, and can "run" cFE, but I don't know what it is actually doing or how to make a simple program. Maybe ping would be a good first step? Or a printf type deal?
+** OSAL
+What is OSAL? Or, perhaps a better starting place, what is FreeRTOS?
+** FreeRTOS
+A real time operating system for embedded systems. Real time means that the system can make concrete guarantees about when tasks will be completed, unlike commodity OSes which are best effort.
+Why am I writting this like a lecture?
+The interface between the hardware and the user's applications.
+** OSAL again.
+Where an RTOS provides a unified abstraction for a large set of hardware, OSAL provides a unified abstraction for a large set of RTOSes. Why so many layers?
+
+Three APIs within OSAL; OS, File and Interrupt / Exeception. One of the best ways to understand a system is through the APIs it presents.
+** OSAL OS API
+*** Misc
+*** Queue
+*** Semaphore and Mutex
+*** Task
+** OSAL File API
+*** File
+*** Directory
+*** Disk
+** OSAL Interrupt / Exception API
+*** Interrupt
+*** Exception
+*** FPU Exception
+** cFE
