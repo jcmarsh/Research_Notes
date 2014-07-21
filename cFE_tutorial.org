@@ -24,3 +24,52 @@ Three APIs within OSAL; OS, File and Interrupt / Exeception. One of the best way
 *** Exception
 *** FPU Exception
 ** cFE
+* <2014-07-16 Wed 18:59> Eh? How goes it?
+Looks like there is already a sample library and app.
+Library doesn't seem to bad... Needs an init function which is then specified in the Makefile.
+Surprisingly the application has a lot more going on.
+** for_build
+Yeah, the Makefile
+** mission_inc
+sample_app_prefids.h - Performance IDs? Maybe the priority?
+Why not for libraries? Library calls probably have the priority of the calling function application. They do have an initialize call... I wonder if just a single instance runs (more like a service than a library).
+** platform_inc
+sample_app_msgids.h - Message IDs... just few defines with 16 bit values. Curious to see how these are used for (pressumable) auto generating some message passing code.
+** src
+sample_app_events.h - Event IDs... so I guess it is safe to assume that events (software interrupts? signals?) are supported.
+sample_app_msg.h - Data types for the different message types. Does not tie in the message ids.
+sample_app_version.h - as one would assume.
+sample_app.h - Main header.
+What is SAMPLE_PIPE_DEPTH?
+Defines a main method, which has to be specified in the Makefile (like the init for the library). 
+sample_app_main.c - Finally, the program. 
+Hmm... this "pipe" thing seems important. Is it a queue in OSAL?
+Also has a message pointer type... shared memory? Likely to reduce copying.
+Event filters using the event ids.
+Lots of cFE provided calls; program status, receive messages, logging, exit.
+AppInit is the most interesting: calls to register for events / pipes.
+Looks like the receive message call takes a pointer to a message pointer (which is global), and the main loop calls a processing function that assumes that pointer has been updated. 
+** Running
+There is a run script: build/pc-linux/exe/cfe_es_startup.scr which lists the library's / apps to run with a cryptic bit of options.
+* <2014-07-21 Mon 07:36> Actual
+Today I want to get my own example up and running. Then maybe look into running on the dev board? Or interfacing with Stage.
+** Notes from Alan Cudmore Meeting
+The SAM7 board (and the GomSpace board) pose some problems. The SAM7 does not have a file system library, necesitating a EEPROM fs and an odd loading system. A static loader, of sorts... not really sure. RAM on the GomSpace is only 2MB, which will be tight. OSAL is still being ported to FreeRTOS.
+GomSpace uses Waf (http://en.wikipedia.org/wiki/Waf), a python based build system.
+cFE is designed to deal with multiple processors in a system, not a complication for us.
+Uses simplified pub/sub, channels (called pipes?) set up in the init functions of apps. 0 copy is available... default copies messages.
+Each app has priority, 0 is highest.
+Not clear on the exact interplay between libs and apps. Libs are not the same as the standard definitions... more similar to a driver. They have an init function, and may keep persistent state. But their (other) functions are only run when called by an app.
+I do not quite understand the preemption model.. is there preemption? Then what is available in libs to ensure mutual exclusion (right phrase?)? What about interrupts?
+The exe directory seems interesting, lots of ugly platform details. What is the table abstraction all about?
+** Producer App, Consumer App, Sharing Lib
+From my notes above, it would seem that a good example to flesh everything out would be to create a shared memory library, which is then exercised using a producer and consumer applications.
+Now, how to go about that?
+*** Library, v0.1
+Needs to allocate memory in init, write / read methods, protection?
+**** fsw/for_build
+Pretty straight forward, just change target name, entry point, and object file name.
+**** fsw/public_inc
+Again, straight forward, just the function definitions for exported functions. Not sure how the comment format works though.
+Need to work on some other stuff... Hopefully back to this in a bit.
+
