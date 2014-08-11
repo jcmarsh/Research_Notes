@@ -23,7 +23,6 @@ Three APIs within OSAL; OS, File and Interrupt / Exeception. One of the best way
 *** Interrupt
 *** Exception
 *** FPU Exception
-** cFE
 * <2014-07-16 Wed 18:59> Eh? How goes it?
 Looks like there is already a sample library and app.
 Library doesn't seem to bad... Needs an init function which is then specified in the Makefile.
@@ -72,4 +71,71 @@ Pretty straight forward, just change target name, entry point, and object file n
 **** fsw/public_inc
 Again, straight forward, just the function definitions for exported functions. Not sure how the comment format works though.
 Need to work on some other stuff... Hopefully back to this in a bit.
+**** fsw/src
+The meat of it. Changed the version in share_lib_version.h.
+Changed some names... actually to the implementation here in share_lib_main.c.
+Simple implementation is done... build?
+*** Build
+Top level, run:
+  . ./setvars.sh
+Go to build/pc-linux
+  make
+  make install
+And no share lib.
+**** build/pc-linux/Makefile
+add the sample library in the apps target
+  apps::
+    $(MAKE) -C share_lib
+And cleanapps
+  cleanapps ::
+    $(MAKE) -C share_lib clean
+And 
+  installapps ::
+    $(MAKE) -C share_lib install
+And
+  dependapps::
+    $(MAKE) -C share_lib depend
+What does that last one do?
+No share_lib directory?
+The pc-linux directory has Makefiles... are these copied from the apps source? Am I missing something here?
+One change to the Makefile: share_lib.o to share_lib_main.o
+And have to copy the share_lib.h file into apps/inc/
+Warnings about redefinitions... prefix global data with "share"
+Looks like it built! Now how about running?
+*** Running
+Will have to wait... time to sleep.
+* <2014-07-22 Tue 07:49> Running?
+Building is a mess. There must be some utils or something to make it easier. Or maybe they don't bother since each platform might need a different system.
+Either way, to run my example I need write and build two applications as well as figure out the runscripts.
+First I'm going to change the library to print more informative statements so that I can test with just one application at first.
+Hmm... Is that a big difference between apps and libs?- Apps must communicate with other apps via messages, but can call functions in libraries?
+** pro_app
+The producer. Will write to the share library.
+*** for_build
+Makefile - change APPTARGET, ENTRY_PT, OBJS (changed for the makefile in build/pc-linux/?). Likely need to copy to build dirs.
+*** mission_inc
+pro_app_perfids.h - Performance IDs? Set to 91. Alright then. I wonder if any analysis is performed.
+*** platform_inc
+pro_app_msgids.h - There must be some reasoning for the id numbers. Didn't I see a utility about this? I'm just going to keep the command id. Not sure what "HK" stands for.
+*** src
+pro_app_events.h - not sure what events I need here; all seem important.
+pro_app.h - Should look into the headers here. And PIPE_DEPTH.
+* <2014-08-05 Tue 15:27> Back to it.
+Test out / run the producer app? Does it build?
+* <2014-08-06 Wed 09:36> 
+Can't build... not finding pro_app_perfids.h
+Manually copying... should automate... why isn't it? Probably is.
+Should copy mission_inc, then platform_inc
+Also, check for message id conflicts?
+Alright, start script.
+Have to manually copy the new .so? I am definately missing out on something here.
+* <2014-08-07 Thu 08:51> It Builds
+But does nothing. Because I have not told it to do anything. Would be great if there was a way to send test messages.
+** Adding a new data type to send.
+Add a new message id
+* <2014-08-11 Mon 11:08> Starting over
+This time, smrter. D'oh! Smarter.
+And recorded as a tutorial.
+Untar> tar -xvf cFE-6.3.2-OSS-release.tar 
+Made a script make this go faster. But that took all afternoon.
 

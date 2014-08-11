@@ -1,0 +1,18 @@
+* <2014-07-23 Wed 08:30> Modeling
+First off, I should say that this has taken me way to long. I simply don't know what I'm doing. I took an easy problem, started exploring it, and got lost in the depth of the field. Control theory is exceedingly useful and interesting, and thus well explored. But for a problem as simple as mine, I did not need to dive quite as deep.
+First I tried to model the reaction wheel from the ground up. This was a mistake for a number of reasons, and eventually I was given the sound advice to give up on that approach. If people who know what they are doing avoid it, then perhaps I should to. Unfortunately this is the method described by most introductions or tutorials on the topic. This is likely because a simple motor can be described this way, and it is really neat to be able to from basic laws of physics such as F=MA or kirchoff's law to a model that accurately describes a system and allows us to control it.
+But it took me down the road of trying to learn maths that I do not have the background for. And when I did come up with a model from first principals, it was too simple to match my observed data. So now I'm going the opposite direction: system identification.
+Unfortunately, the rudementary maths needed for this approach are also beyond me. I am noticing a theme here. Anyways, I have a computer and am a computer scientist (or so I say), so I'm going to take a computational approach. With plots and graphs and pictures.
+** Starting Data
+The reaction wheel is not a simple device. The motor is controlled via a very fast control loop that adjusts current. This loop is itself controlled by a slower loop that attempts to maintain a desired speed / torque / acceleration etc. I am attempt to use current control (thus bypassing one of the outer/slower controller), but the current control loop does some odd things that I may have to adjust for later.
+For my initial data, I have two test runs:
+  Coast Down - the wheel is given a high current command. Once a specified speed is reached, the motor is set to idle: it will slowly coast to a stop. How slowly depends on friction and drag. Since, for now, the experiments are being run in atmosphere, I will have to consider friction and drag together.
+  Current vs Speed - The wheel is given a variety of current commands, and the speed is recorded at regular intervals. This is the same as the first half of the coast down run, but we vary the current.
+There are limitations to this data: we are using the wheel to report speed and thus are constrained by it's limitations. Speeds below 5 rad/sec are inaccurate and may be reported as 0.0 (this is done to reduce command response latency). The motor will also behave less well at high speeds as it approaches saturation, so I am imposing a top speed somewhere around 500 rad/sec. This may be pushed higher if the models match experimental data well enough. So the target range is 5 to 500 rad/sec.
+** Coast Down - Friction
+Starting at 5 rad/sec means that we can ignore sticiton. The top limit of 500 rad/sec will hopeful avoid any limits enforced by the wheel control software. With current set to zero, the speed of the wheel at any moment is the previous speed minus the friction, which I assume to be proprotional to the speed (seems reasonable given the curve of the coast down line: more friction at higher speeds, less at lower speeds).
+  w1 = w0 - Cw0
+From the graphs... with C=.004 and C=.005 illustrating, our model is too simple. Error in the mid range can only be reduced by increasing error at the low range.
+
+
+
