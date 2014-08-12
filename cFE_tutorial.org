@@ -139,3 +139,27 @@ And recorded as a tutorial.
 Untar> tar -xvf cFE-6.3.2-OSS-release.tar 
 Made a script make this go faster. But that took all afternoon.
 
+* <2014-08-12 Tue 11:28> Make making easier
+Make sure osal is already installed.
+> . ./setvars
+> cd build/pc-linux
+Edit Makefile, adding sim_sensor_app to the same rules as sample_app. And:
+apps:: copy_apps
+        $(MAKE) -C sample_lib
+        $(MAKE) -C sample_app
+        $(MAKE) -C sim_sensor_app
+
+copy_apps::
+        rm -rf sim_sensor_app
+        mkdir sim_sensor_app
+        cp ../../apps/sim_sensor_app/fsw/for_build/* ./sim_sensor_app/
+        cp ../../apps/sim_sensor_app/fsw/platform_inc/* ./inc/
+        cp ../../apps/sim_sensor_app/fsw/mission_inc/* ../mission_inc/
+
+> cd ..; make; make install
+
+Now to run, edit cfe_es_startup.scr, add:
+CFE_APP, /cf/sim_sensor_app.so,   SIM_SENSOR_AppMain,  SIM_SENSOR_APP,   50,  16384, 0x0, 0;
+> sudo core-linux.bin
+
+
