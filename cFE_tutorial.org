@@ -162,4 +162,46 @@ Now to run, edit cfe_es_startup.scr, add:
 CFE_APP, /cf/sim_sensor_app.so,   SIM_SENSOR_AppMain,  SIM_SENSOR_APP,   50,  16384, 0x0, 0;
 > sudo core-linux.bin
 
+* <2014-08-14 Thu 10:03> Finish This
+Need to take care of App-Life, then adding message types, then the controller.
+** App-Life
+
+** Message types
+platform_inc/sim_sensor_app_msgids.h - set ids here (what requirements?)
+HK- House Keeping
+TLM - TeLeMetry
+MID - Message ID
+We can keep the same for now since we just want a command message and a data message.
+src/sim_sensor_app_msg.h - where the messages are defined (as structs), must edit here.
+Has command codes... like our mode variable.. automatic?
+CFE_SB_TLM_HDR_SIZE... so cFE defines a few types of messages? CFE_SB_CMD_HDR_SIZE... only two: telemetry and commands.
+Does it have to be all uint8?
+SB - Software Bus... Maybe there is more to this, since cFE is made to run across multiple heterogenus processors.
+SBN - Software Bus Network
+CCSDS - Consultative Committee for Space Data Systems: I guess they set the standard for the packets.
+SpaceWire? Wormhole-Switching? Wiki trip!
+Apparently wormhole switching (or routing) is for fixed node networks. A message is broken into flits (FLow control digITS), the first of which sets up virtual channel that the rest follow. The tail flit closes the connection. This is what SpaceWire uses apparently. SpaceWire is a communication network using point to point serial links and wormhole routing.
+Is the CCSDS format overkill for Dellingr?
+cFE - core Flight Executive Vs. CFS - Core Flight System
+PSP - Platform Support Package - adapts cFE to a new OS / board.
+ES - Executive Services - Starts cFE, controls applications (starting / reseting and so on)
+What the hell are these tables?
+* <2014-08-15 Fri 08:50> Err... Now Finish It.
+The question is: do we really need the CCSDS format when all the communications are going to be on a single CPU. So... how about these SB_TLM_HDR and SB_CMD_HDR? I'm going to print them out, see the overhead.
+The system may be smart enough not to package them as such if everything is local.
+** src/sim_sensor_app_msg.h 
+OS_PACK?
+sim_sensor_app.h
+void SIM_SENSOR_AppMain(void);
+void SIM_SENSOR_AppInit(void);
+void SIM_SENSOR_ProcessCommandPacket(void);
+void SIM_SENSOR_SendTelemtry(void);
+** App Life
+AppInit - Register App, reg for events, setup pipes.
+** Messages
+CFE_SB_GetCmdCode... CCSDS already has command codes built in.
+Code types are defined in sim_sensor_app_msg.h
+Also has timestamps.
+** Printf equivalent
+sim_sensor_app_events.h -> #define SIM_SENSOR_PRINTF_INF_EID            7
 
