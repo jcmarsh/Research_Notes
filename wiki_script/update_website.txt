@@ -5,6 +5,7 @@ The website content is all kept in ~/Dropbox/website/web_source ($WEB_SOURCE for
 First, my personal wiki should be downloaded as a static copy into
 $WEB_SOURCE/wiki/
 This can be done by navigating to that directory, and then running download_strip.sh there.
+NOTE: Should likely turn off Dropbox syncing first!
 
 Now that the website source is ready to go, it's time to generate the website.
 This can be done by going to ~/research/gen-site/ and running

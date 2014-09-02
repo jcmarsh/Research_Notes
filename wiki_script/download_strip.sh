@@ -19,6 +19,7 @@ rm *RecentChanges.html
 cd uploads/Background
 rm *.pdf
 cd ..
+rm ./System/Kan13SchedulingOPRoS.pdf
 rm ./System/Parker01Evaluating.pdf
 rm ./Notes/c200-chipset.pdf
 cd Research
