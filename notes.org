@@ -2359,6 +2359,9 @@ Don't forget to copy the scripts after changes.
 * Summer
 * <2014-09-02 Tue 15:40> Back at It
 So I guess most of my notes are on paper. And at home. Great job.
+Trying to get familiar with the PINT codebase again. Updating docs to help.
+Oh, and TCS / TAS. Hmm... can't pull. I guess I could bug Taylor.
+
 
 * USEFUL Things.
 ** bash
@@ -2486,6 +2489,10 @@ Scroll terminal / exit
   ^b+[ / q
 Rotate panes
 ^b+^o
+** tree
+Seriously more useful than ls.
+Displays directory and contents as a... TREE!
+> sudo apt-get install tree
 ** wmctrl
 Resize the selected (click on) window
   wmctrl -r :SELECT: -e 0,0,0,1024,768
