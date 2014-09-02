@@ -2356,6 +2356,9 @@ need openvpn
 Oh yeah, and edit the qemu-ifup and down scripts to match the host.
 Don't forget to copy the scripts after changes.
 
+* Summer
+* <2014-09-02 Tue 15:40> Back at It
+So I guess most of my notes are on paper. And at home. Great job.
 
 * USEFUL Things.
 ** bash
@@ -2410,6 +2413,13 @@ Change branch
 > git checkout name
 Merge branch
 > git merge name
+
+Sometimes have trouble pushing, a https problem of some sort. Setup parameters correctly to fix:
+set the url to include user name:
+> git config remote.origin.url
+> git config remote.origin.url https://jcmarsh@....
+should also set the user email correctly
+> git config --global user.email jcmarsh@gwmail.gwu.edu
 
 ** inline assembly
 r for any register?
