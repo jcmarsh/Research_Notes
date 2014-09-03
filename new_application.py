@@ -30,11 +30,9 @@ def copy_file(original_file_name, new_file_name):
     orig_file.close()
     new_file.close()
  
-def print_usage():
-    print "Add a useful message here."
-
 if len(sys.argv) < 1:
-    print_usage()
+    print "Not enough args."
+    print "Usage: python new_application.py <table_file>"
 else:
     var_f = open(sys.argv[1])
     var_table = parse_vars(var_f)

@@ -14,5 +14,24 @@ Starting at 5 rad/sec means that we can ignore sticiton. The top limit of 500 ra
   w1 = w0 - Cw0
 From the graphs... with C=.004 and C=.005 illustrating, our model is too simple. Error in the mid range can only be reduced by increasing error at the low range.
 
-
-
+* <2014-08-27 Wed 15:06> Vacuums
+One month later and almost done.
+Right now I need to outline the general process and automate it so that I can go ahead and finish with the cryo vac runs soon.
+** Initial Data
+Once the wheel is in the testing chamber (vacuum, temp), there are two tests to run:
+*** Coast down
+Have the wheel spin up to a high speed (I used 500 rad / sec... 650 would have worked fine... and actually I have some data on this from the next test. 500 was picked to be extra safe). Once it hits that speed, switch it off and take a bunch of speed masurements (10 hertz). That's it. Takes about 70 seconds to go from 500 to 0.
+*** Speed Up.
+Send the wheel a command to maintain a set current, then measure the wheel speed (again, 10 hertz). This time though the current should be varied. I did separate runs, all starting from zero, with different current commands.
+The problem here is that very low commands never get the wheel to reach higher speeds, so I don't have any data about what the wheel will do if running at 400 rad / sec and a small current (.0007 A) was applied. The final curve may also be biased towards all the points clustered at this low speed, low current area.
+For recording current information, we are interested in the commanded current, not the the actual current which will begin to drop near the upper end of this spectrum.
+** Data Processing
+The data is in a plain text file, and there are some irregularities from messages which are clobbered by other messages. This happens infrequently, so it should not through the data off, but does through of the scalling in the graphs.
+The data also does not include acceleration, so that must be calculated.
+*** Coast down
+Interested in speed vs acceleration.
+Must remove the speed readings from when the wheel was under power (to reach 500 rad / sec). All data should be between 500 and 5 rad. May be able to go lower since the wheel seems pretty accurate in this case.
+> python coast_filter.py datafile.log > data_filtered.log
+> python coast_to_matlab.py data_filtered.log matlab_data_name > data_filtered.m
+> python coast_poly.py data_filtered.log
+* <2014-08-29 Fri 08:40>
