@@ -205,3 +205,39 @@ Also has timestamps.
 ** Printf equivalent
 sim_sensor_app_events.h -> #define SIM_SENSOR_PRINTF_INF_EID            7
 
+* <2014-09-03 Wed 14:16> Problems
+** Sim Control App
+*** Error Msg
+1980-012-14:03:20.07555 ES Startup: Loading file: /cf/sim_control_app.so, APP: SIM_CONTROL_APP
+1980-012-14:03:20.09009 ES Startup: Could not load cFE application file:/cf/sim_control_app.so. EC = 0xFFFFFFFF
+*** Init?
+Sim sensor seems to be working fine. Not sure what is wrong with sim control.
+Maybe something with it's initialization? The error message implies loading... should see if that actual means loading.
+*** ./cfe/fsw/cfe-core/src/es/cfe_es_apps.c
+Error thrown from here.
+ReturnCode = OS_ModuleLoad ( &ModuleId, AppName, FileName );
+Few implementations, checking: ./osal/src/os/posix/osloader.c
+Looking into error codes... 0xFFFFFFFF anyone?
+./osal/src/os/inc/osapi-os-loader.h
+Returns: OS_ERROR if the module cannot be loaded
+So, yeah, the module can't be loaded. SUPER HELPFUL.
+calls dl_open, dl_error: .//sim_control_app.so: undefined symbol: SIM_CONTROL_ResetCounters
+So, yeah. How could I have found that easier?
+*** Detecting
+> objdump -T sim_control_app.so
+Should show a bunch of undefined CFE symbols, but all SIM_CONTROL symbols should be defined.
+*** Fixing
+Happened because SIM_CONTROL_ResetCounters is in the header, but never defined.
+Removed call to it.
+A lot of time wasted on that one. When in doubt, objdump.
+** New Error
+EVS Port1 66/1/CFE_SB 19: Rcv Err:PipeId 255 does not exist,app SIM_CONTROL_APP
+But before that:
+66/1/CFE_EVS 4: CreatePipeErr:OS_QueueCreate returned -13,app SIM_CONTROL_APP
+./osal/src/os/posix/osapi.c
+#define OS_ERR_NAME_TOO_LONG           (-13)
+Really?
+SIM_SENSOR_CMD_PIPE - just right
+SIM_CONTROL_DATA_PIPE - too long
+It works now.
+
