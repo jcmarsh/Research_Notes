@@ -241,3 +241,15 @@ SIM_SENSOR_CMD_PIPE - just right
 SIM_CONTROL_DATA_PIPE - too long
 It works now.
 
+* <2014-09-05 Fri 11:47> Ping Pong
+Figured out the problems. Time to finish the tutorial.
+eh. Maybe I'll try to jump on the housekeeping bit. I feel like I should since apparently Salman has also tasked Eduardo with that.
+** Sublime
+I'm going to try out sublime I think.
+Hmm... doesn't handle .org files out of the box, but this person is working on it: https://github.com/danielmagnussons/orgmode
+Nothing too special yet. I like the view at the side.
+No idea what use the command prompt is.
+** Message Structs
+Why not include a basic bit of IDL in the new_appplication script?
+But where is the code duplication? What work am I saving?
+
