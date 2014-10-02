@@ -2362,6 +2362,23 @@ So I guess most of my notes are on paper. And at home. Great job.
 Trying to get familiar with the PINT codebase again. Updating docs to help.
 Oh, and TCS / TAS. Hmm... can't pull. I guess I could bug Taylor.
 
+* <2014-10-02 Thu 10:09> Comm
+Looks like I'm going to rework comm again.
+Time for variable length messages. This will let me add CRC checks. If I keep the padding, then I have to make sure that the padding is either a known value or that the CRC is only performed on the data.
+But then how do I deal with the union? Unions are the size of the largest possible member.
+Maybe get rid of the comm_message type? Every message just needs a header / tail that is known.
+Everything is broken now:  brace-enclosed initializer is not allowed here
+Damn it. That would have been nice.
+Reworked. Slightly less things broken now.
+Oh. That's why I did things like that: the message type is not know when it is being read in.
+Fuck's sake.
+Okay, I only want to do one write / read per message. And I want them to all be the same size so that I don't read all of one message and then the start of the next.
+So, all must be the same size? That seems shitty.
+But at least I remember why I did things like that to start with.
+This is all a distraction from actual research.
+shit.
+The crc stuff is pointless: if the platform required it, then the control program would already have it. So... I'm not adding anything by doing this.
+
 
 * USEFUL Things.
 ** bash

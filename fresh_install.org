@@ -1,0 +1,68 @@
+* <2014-09-23 Tue 18:46> Fresh Install
+How do I actually make ubuntu useful?
+** Editor
+sudo apt-get install emacs
+Configure emacs...
+What about sublime text?
+** utils
+sudo apt-get install git
+** That god-damn alt-tab behavior
+Fuckers.
+** RT Kernel
+From wiki
+Fix build-dep ? Should it be the kernel version that you are building? Doesn't actually have them for that. Huh.
+Hmm... lets you build the current kernel, but likely pulls a lot of tools needed.
+Fix Patch from wiki
+** All the build tools
+sudo apt-get install build-essential
+sudo apt-get build-dep linux-image-`uname -r`
+sudo apt-get install kernel-package 
+sudo apt-get install libncurses5-dev 
+* <2014-09-29 Mon 09:30> New new Kernel
+Going to try the latest RT-preempt patch to see what happens.
+And upgrade my "vanila" kernel at the same time to get a better comparison.
+Going with 3.14.12
+** Downloading and Not Really Checking Signatures
+Downloading it all, then re-enable hyper threading so that makeing does take five years (approx.)
+Download the .sign as well
+> wget https://www.kernel.org/pub/linux/kernel/v3.0/linux-3.14.12.tar.gz
+> wget https://www.kernel.org/pub/linux/kernel/v3.0/linux-3.14.12.tar.sign
+Check the signature (from https://www.kernel.org/signature.html)
+> gpg --verify linux-3.14.12.tar.sign
+When this doesn't work, download the key with the id specified: 6092693E
+> gpg --keyserver hkp://keys.gnupg.net --recv-keys 6092693E
+Rerun --verify. Will get a warning. In theory, I should now go check the validity of the key signature. But nah.
+> gpg --verify linux-3.14.12.tar.sign
+Whatever, moving on. Hopefully this means the file downloaded correctly, but I'm not sure that that is the case.
+Get the RT patch
+> wget https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patch-3.14.12-rt9.patch.gz
+> wget https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patch-3.14.12-rt9.patch.sign
+Verify that too if you would like. Signed with a different key it looks like
+> gpg --keyserver hkp://keys.gnupg.net --recv-keys 0D7498A1
+Let's hope that Thomas Gleixner is the right person.
+> gpg --verify patch-3.14.12-rt9.patch.sign
+Oh well. Halfway to doing security correctly (which means 0% secure).
+** Installing again
+Un-tar and then copy source. We want a vanilla and a patched version.
+> tar -xvf linux-3.14.12.tar
+> cp -r linux-3.14.12 linux-3.14.12-rt
+Hmm.. restarting so I can turn on HT for a bit.
+Alright, back with HT.
+First, the vanilla kernel
+Edit top level Makefile to have: EXTRAVERSION = vanilla
+That should help keep things straight.
+> make-kpkg clean
+> make menuconfig
+> fakeroot make-kpkg -j4 --initrd --revision=3.14.12.vanilla kernel_image
+> sudo dpkg -i ../linux-image-3.14.12vanilla_3.14.12.vanilla_amd64.deb 
+Hmm... having errors with fglrx. Oh well. Looks like I'll have the video driver headache again.
+Now for the RT version
+Remember to edit the extraversion again.
+> patch -p1 <../patch-3.14.12-rt9.patch
+> make-kpkg clean
+Be sure to enable the preempt kernel: Processor type and features ---> Preemption Model
+> make menuconfig
+> fakeroot make-kpkg -j4 --initrd --revision=3.14.12.RTpatch kernel_image 
+> sudo dpkg -i ../linux-image-3.14.12real-rt9_3.14.12.RTpatch_amd64.deb
+Update the grubs
+> 
