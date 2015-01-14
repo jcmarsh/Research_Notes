@@ -1,6 +1,7 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
+#include <linux/sched.h>
 
 #define __NR_inspect 312
 
@@ -9,7 +10,12 @@ extern void *sys_call_table[];
 asmlinkage long *original_inspect;
 
 asmlinkage long inspect_call(void) {
-  printk(KERN_INFO "SHIT. It worked.\n");
+  struct task_struct* cur_task;
+  pid_t pid;
+  cur_task = get_current();
+  pid = cur_task->pid;
+
+  printk(KERN_INFO "SHIT. It worked. PID: %d\n", pid);
   return 0;
 }
 

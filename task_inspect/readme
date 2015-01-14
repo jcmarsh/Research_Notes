@@ -1,0 +1,12 @@
+First insert the module, then run the test program to see if it actually worked
+
+To insert the module
+  make
+  sudo insmod inspect.ko
+
+Run the test program.
+Check output with dmesg.
+
+Remove the module
+  sudo rmmode inspect
+
