@@ -252,4 +252,13 @@ No idea what use the command prompt is.
 ** Message Structs
 Why not include a basic bit of IDL in the new_appplication script?
 But where is the code duplication? What work am I saving?
+* <2014-09-10 Wed 10:53> Keeping House
+Shoot... was I doing an IDL thing? Is that actually easier?
+Oh right, new code is in House_cFE.
+Using XML... annoying but I couldn't find an easier solution.
+There is a bunch of custom code that is going to be needed for each one. No way around that. Maybe I should remove that code from the templates?
+Pretty monotonous work.
+Many changes with the latest version of the EPS.
+Perhaps I should add a section for different data types (non uint32 type stuff... the rtc value, for example, uses 7 bytes. I don't know. Maybe that will be defined elsewhere.
+Still dobutful what I gained from all of this. I mean, I had to make the definitions for the types... why not just the structs? Shit. I think this wasted time more than anything. Maybe it will end up handy later.
 

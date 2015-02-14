@@ -1,0 +1,4 @@
+Investigating signal timing for orphans.
+main.c - Makes an orphan of N orphans. Then signals.
+simple_test.c - Just tests signal time between parent and child.
+
