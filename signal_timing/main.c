@@ -42,13 +42,9 @@ void fork_n_die(void) {
 			fork_n_die();
 		} else {
 			printf("Soon to be Orphan here, signal to %d\n", ancestor_pid);
-			// child process - send signal (so ancestor has orphan pid), setup handler. Recv signals and print times
-			if (kill(ancestor_pid, ORPHAN_TO_ANCESTOR) < 0) {
-				perror("Orphan failed to signal ancestor");
-			}
-
+			// child process
+			// setup handler first so will not terminate when signal recieved.
 			struct sigaction sa;
-
 			sa.sa_flags = SA_SIGINFO;
 			sigemptyset(&sa.sa_mask);
 			sa.sa_sigaction = signalHandler;
@@ -56,7 +52,12 @@ void fork_n_die(void) {
 				perror("Failed to register the child handler");
 				return;
 			}
-			while(1) {};
+			// send signal (so ancestor has orphan pid)
+			if (kill(ancestor_pid, ORPHAN_TO_ANCESTOR) < 0) {
+				perror("Orphan failed to signal ancestor");
+			}
+
+			while(1) {}
 		}
 	} else {
 		//printf("Red Parent is about to die. %d and %d\n", ancestor_pid, getpid());
