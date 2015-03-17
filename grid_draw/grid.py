@@ -2,6 +2,11 @@ import Image
 import ImageDraw
 import sys
 
+
+if len(sys.argv) < 3:
+	print "Usage: python grid.py <file_name> <line_width>"
+	sys.exit()
+
 file_name = sys.argv[1]
 line_width = int(sys.argv[2])
 print "File name: %s\t Alley width: %d" % (file_name, line_width)
