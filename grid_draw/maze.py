@@ -23,29 +23,17 @@ draw = ImageDraw.Draw(im)
 # Draw ending area (upper right corner)
 #draw.rectangle((max_x - start_margin, 0, max_x, start_margin), fill=1)
 
-# The Maze
-#   ########..  
-#   #...###...
-#   #.#.###.##
-#   #...#.#.##
-#   #.###.#.#.
-#   #.....#.#.
-#   #.#####...
-#   #.##..##.#
-#   ..##.###.#
-#   .........#   
-
 maze = []
-maze.append([1, 1, 1, 1, 1, 1, 1, 1, 0, 0])
-maze.append([1, 0, 0, 0, 1, 1, 1, 0, 0, 0])
-maze.append([1, 0, 1, 0, 1, 1, 1, 0, 1, 1])
-maze.append([1, 0, 0, 0, 1, 0, 1, 0, 1, 1])
-maze.append([1, 0, 1, 1, 1, 0, 1, 0, 1, 0])
-maze.append([1, 0, 0, 0, 0, 0, 1, 0, 1, 0])
-maze.append([1, 0, 1, 1, 1, 1, 1, 0, 0, 0])
-maze.append([1, 0, 1, 1, 0, 0, 1, 1, 0, 1])
-maze.append([0, 0, 1, 1, 0, 1, 1, 1, 0, 1])
-maze.append([0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+maze.append([1, 1, 1, 0, 1, 1, 1, 1, 0, 0])
+maze.append([1, 0, 0, 0, 0, 0, 1, 0, 0, 0])
+maze.append([1, 0, 1, 1, 0, 1, 1, 0, 1, 1])
+maze.append([1, 0, 0, 1, 0, 0, 1, 0, 1, 1])
+maze.append([1, 0, 1, 1, 1, 0, 1, 0, 0, 0])
+maze.append([1, 0, 0, 0, 1, 0, 1, 1, 1, 0])
+maze.append([1, 0, 1, 0, 1, 0, 0, 0, 1, 0])
+maze.append([1, 0, 0, 0, 1, 1, 0, 1, 1, 0])
+maze.append([0, 0, 1, 1, 1, 1, 0, 0, 0, 0])
+maze.append([0, 0, 1, 1, 1, 1, 0, 1, 0, 1])
 
 for i in range(0, len(maze)):
 	for j in range(0, len(maze[i])):

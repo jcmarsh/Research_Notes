@@ -1,0 +1,5 @@
+* <2015-03-22 Sun 12:21>
+Need to figure out why I have a priority inversion problem, and then fix it.
+I suspect the problem is with using pipes.
+** Minimal Version
+Need to make a simple program that demonstrates the problem.
