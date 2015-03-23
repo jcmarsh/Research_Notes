@@ -1,5 +1,6 @@
 * <2015-03-22 Sun 12:21>
 Need to figure out why I have a priority inversion problem, and then fix it.
-I suspect the problem is with using pipes.
+I suspect the problem is with using pipes / select.
 ** Minimal Version
 Need to make a simple program that demonstrates the problem.
+This program does not show the behavior I wanted...

@@ -1,7 +1,6 @@
+#include <sched.h>
 #include <stdio.h>
 #include <stdlib.h>
-//#include <unistd.h>
-
 
 int main (int argc, char** argv) {
 	// Need two processes communicating with a pipe.
@@ -22,11 +21,19 @@ int main (int argc, char** argv) {
 	if (currentPID >= 0) { // Successful fork
 		if (currentPID == 0) { // Child process, high prio producer
 			// Sched priority high
+			struct sched_param param;
+			param.sched_priority = 80;
+			if( sched_setscheduler(getpid(), SCHED_RR, &param ) == -1 ) {
+				perror("Messed up setting non RT scheduler");
+			}
+
+			sleep(10);
+
 			while(1) {
 				// write to pipe
 				char buffer[10] = "High Prio";
 				write(high_pipes[1], buffer, sizeof(char) * 10);
-				sleep(1);
+				usleep(500000);
 			}
 		}
 	} else {
@@ -38,6 +45,14 @@ int main (int argc, char** argv) {
 	if (currentPID >= 0) { // Successful fork
 		if (currentPID == 0) { // Child process, low prio producer
 			// Sched priority low
+			struct sched_param param;
+			param.sched_priority = 70;
+			if( sched_setscheduler(getpid(), SCHED_RR, &param ) == -1 ) {
+				perror("Messed up setting non RT scheduler");
+			}
+
+			sleep(10);
+
 			while(1) {
 				char buffer[10] = "Low Prio!";
 				write(low_pipes[1], buffer, sizeof(char) * 10);
@@ -47,6 +62,7 @@ int main (int argc, char** argv) {
 						int t = i * j;
 					}
 				}
+				usleep(10000);
 			}
 		}
 	} else {
@@ -55,12 +71,19 @@ int main (int argc, char** argv) {
 
 	// parent is the consumer
 	// Sched priority high
+	struct sched_param param;
+	param.sched_priority = 90;
+	if( sched_setscheduler(getpid(), SCHED_RR, &param ) == -1 ) {
+		perror("Messed up setting non RT scheduler");
+	}
+	
 	struct timeval select_timeout;
 	fd_set select_set;
 
 	char in_buffer[10];
 
 	while(1) {
+		//printf("What up?\n");
 		select_timeout.tv_sec = 1;
 		select_timeout.tv_usec = 0;
 
