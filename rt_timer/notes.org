@@ -1,3 +1,5 @@
 * <2015-03-24 Tue 08:09> Timers
+** timer_test
 It looks like timers do not fire immediately (or on timer) when a system has high utilization. I need to test this to rule out other problems.
-
+** signal_test
+Timers notify the process of expiration via signals (timerfd is likely built on signals too, just hidden). So if timers aren't working under load, there is a good chance that neither are signals. Need to test this.
