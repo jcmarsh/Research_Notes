@@ -24,7 +24,7 @@ int main (int argc, char** argv) {
 			struct sched_param param;
 			param.sched_priority = 80;
 			if( sched_setscheduler(getpid(), SCHED_RR, &param ) == -1 ) {
-				perror("Messed up setting non RT scheduler");
+				perror("Messed up setting RT scheduler");
 			}
 
 			sleep(10);
@@ -48,7 +48,7 @@ int main (int argc, char** argv) {
 			struct sched_param param;
 			param.sched_priority = 70;
 			if( sched_setscheduler(getpid(), SCHED_RR, &param ) == -1 ) {
-				perror("Messed up setting non RT scheduler");
+				perror("Messed up setting RT scheduler");
 			}
 
 			sleep(10);
@@ -74,7 +74,7 @@ int main (int argc, char** argv) {
 	struct sched_param param;
 	param.sched_priority = 90;
 	if( sched_setscheduler(getpid(), SCHED_RR, &param ) == -1 ) {
-		perror("Messed up setting non RT scheduler");
+		perror("Messed up setting RT scheduler");
 	}
 	
 	struct timeval select_timeout;
