@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <sched.h>
 #include <signal.h>
 #include <stdio.h>
@@ -32,6 +33,13 @@ int main (int argc, char** argv) {
 
 	if (currentPID >= 0) { // Successful fork
 		if (currentPID == 0) { // Child process, low prio intensive
+			cpu_set_t cpuset_mask;
+			CPU_ZERO( &cpuset_mask);
+			CPU_SET(1, &cpuset_mask);
+			if (sched_setaffinity(getpid(), sizeof(cpuset_mask), &cpuset_mask) == -1 ) {
+				perror("Failed cpu affinity");
+			}
+
 			// Sched priority low
 			struct sched_param param;
 			param.sched_priority = 40;
@@ -58,13 +66,20 @@ int main (int argc, char** argv) {
 					}
 				}
 				printf("child sleep\n");
-				usleep(2000000);
+				usleep(20000000);
 			}
 		}
 	} else {
 		printf("Fork error\n");
 	}
 
+	cpu_set_t cpuset_mask;
+	CPU_ZERO( &cpuset_mask);
+	CPU_SET(1, &cpuset_mask);
+	if (sched_setaffinity(getpid(), sizeof(cpuset_mask), &cpuset_mask) == -1 ) {
+		perror("Failed cpu affinity");
+	}
+	
 	// parent times trigger events
 	// Sched priority high
 	struct sched_param param;

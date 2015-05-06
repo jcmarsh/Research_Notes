@@ -27,7 +27,7 @@ int main (int argc, char** argv) {
 		if (currentPID == 0) { // Child process, low prio intensive
 			// Sched priority low
 			struct sched_param param;
-			param.sched_priority = 40;
+			param.sched_priority = 30;
 			if( sched_setscheduler(getpid(), SCHED_RR, &param ) == -1 ) {
 				perror("Messed up setting RT scheduler");
 			}
@@ -51,7 +51,7 @@ int main (int argc, char** argv) {
 	// parent times trigger events
 	// Sched priority high
 	struct sched_param param;
-	param.sched_priority = 90;
+	param.sched_priority = 40;
 	if( sched_setscheduler(getpid(), SCHED_RR, &param ) == -1 ) {
 		perror("Messed up setting RT scheduler");
 	}
