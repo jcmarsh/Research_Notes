@@ -1,0 +1,35 @@
+I'm not really sure if I should even be bothering with this right now. When large controllers are run (160000 Kb) (Why don't I change that to Mb?), restart times slowly increase.
+
+Need to check with smaller replicas.
+
+The problem seems to be in mlockall, and only in the case of broken ancestry (I think. That is another thing I have to figure. Seems like only broken ancestry runs print out to a file... something that baffles me. And may be related?).
+
+Sigh. Anyways.
+
+So, let's take a look at mlockall. Wait, first, is mlockall even the problem? What if mlockall is having trouble because more memory is being allocated (and thus needs to be walked)? THEN the problem would show up with smaller cases too, right?
+
+Maybe the problem is some kind of memory fragmentation.
+
+ find . -name "*.h" -exec grep -l "mlockall" {} \;
+
+Right, it's a system call. 
+
+mm/mlock.c
+
+Some `down_write` and `up_write` calls... semaphore acquire / release?
+Then call to `do_mlockall`
+
+Good news... not much here. Really just one loop that goes through virtual memory addresses... which surprises no one.
+
+I guess I could confirm the problem by re-compiling the kernel, and then dmesging the count or something. Might be worth doing just to make sure I'm not chasing my tail. BUT... there aught to be a way easier way to check number of VMAs! Nothing in /proc/<pid>/?
+
+Maybe not actually helpful, becuase I don't know what is adding the VMAs.
+
+of course: /proc/<pid>/status
+
+Looks like the first replica hasn't called mlockall / walk.
+
+VmPTE are increasing?
+
+There was a bug with the Empty controller: was not calling mlockall, so the initial status was misleading. Need to check again.
+
