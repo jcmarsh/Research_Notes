@@ -1,0 +1,13 @@
+* <2015-06-14 Sun 18:32> minimum example
+
+I've been working on this for a bit. I could of sworn I already had notes... but they must not be in the repo yet.
+
+Doesn't matter, I'm going at this a different way since directly changing VoterD isn't doing what I expected.
+
+I need to have a c program that only has page faults during the initial setup. Afterwards, new heap allocations (within a bounds) do not trigger faults.
+
+This is going to basically be the dynamic tutorial from rt wiki... but hopefully working well.
+
+Step one: simple program making sure rusage works as expected.
+
+Well, I skipped ahead a bit... everything is working fine. mlockall is working as expected. As is mallopt. And yet, I was having trouble with it last week.
