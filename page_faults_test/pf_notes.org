@@ -1,3 +1,66 @@
+* <2015-06-10 Wed 14:31> First try.
+I'm going to look at VoterD first because, perhaps surprsingly, it is the simplist for me to exercise. Running my system with TMR, I can measure the page faults that occur during normal operation. Then I inject errors (killing replicas) and can remeasure the number of pagefaults that occur. This doesn't give me a completely accurate look, but is a start.
+Ideally, I would have an initialization phase, after which no more page faults occur. That I can tackle later.
+Does VoterD allocate any heap?
+My code already mlocks everything and then walks memory to make sure that it is resident.
+man mlock has useful notes about this.
+
+Before errors injected:
+ps -ao pid,min_flt,maj_flt,comm
+  PID  MINFL  MAJFL COMMAND
+11458    406      0 VoterD
+11459    401      0 VoterD
+11460    404      0 VoterD
+11461    406      0 VoterD
+
+After "a few" errors:
+ps -ao pid,min_flt,maj_flt,comm
+  PID  MINFL  MAJFL COMMAND
+11458    427      0 VoterD
+11459    424      0 VoterD
+11460    426      0 VoterD
+11461    421      0 VoterD
+
+VoterD calls malloc and free in code that is only executed while handleing restarts (check restart_prep, for stealing and returning buffers). Even if this were not the case, I would have to wary of stack allocations.
+
+I should make sure to describe the difference between the two (stack vs heap).
+
+referencing rt.wiki.kernel.org/index.php/Dynamic_memory_allocation_example
+
+Anyways, first lets make sure that stack allocations are not the problem. How much stack is the VoterD allocating? pmap can tell us:
+before injecting errors:
+ pmap 12501
+12501:   VoterD ArtPot TMR 1200000 70 RANGE_POSE_DATA:17:0:1 WAY_REQ:0:28:0 WAY_RES:29:0:0 MOV_CMD:0:15:1
+0000000000400000    800K r-x--  /home/jcmarsh/research/stage/experiments/VoterD
+00000000006c7000     12K rw---  /home/jcmarsh/research/stage/experiments/VoterD
+00000000006ca000    292K rw---    [ anon ]
+0000000001a5a000    140K rw---    [ anon ]
+00007fff1f502000    132K rw---    [ stack ]
+00007fff1f527000      4K r-x--    [ anon ]
+ffffffffff600000      4K r-x--    [ anon ]
+ total             1384K
+
+root@jcmarsh-OptiPlex-990:/home/jcmarsh/research/stage/experiments# pmap 12796
+12796:   VoterD ArtPot TMR 1200000 70 RANGE_POSE_DATA:17:0:1 WAY_REQ:0:28:0 WAY_RES:29:0:0 MOV_CMD:0:15:1
+0000000000400000    800K r-x--  /home/jcmarsh/research/stage/experiments/VoterD
+00000000006c7000     12K rw---  /home/jcmarsh/research/stage/experiments/VoterD
+00000000006ca000    292K rw---    [ anon ]
+0000000000758000    140K rw---    [ anon ]
+00007fa6549bb000      4K rw---    [ anon ]
+00007fff3e0e1000    132K rw---    [ stack ]
+00007fff3e1ff000      4K r-x--    [ anon ]
+ffffffffff600000      4K r-x--    [ anon ]
+ total             1388K
+
+Actually, this really doesn't look that bad. The stack hasn't grown. There are new heap allocations, but only 4K ones. I bet that's the page size. This is going to depend on the replica, (pipes impact the number of buffers stolen... but those make out at 10. Can I stop all VoterD page faults just by adding 40K to the heap?
+
+All I should  have to do is malloc a bit before my lock it up code (which should handle locking and walking).
+
+* <2015-06-12 Fri 13:09> 
+Not as easy as I thought. If I free the malloc, then the memory is returned to the system. I need to figure out how to prevent that.
+
+The rt.wiki.kernel.org tutorial is useful. Also the eholtz paper should be referenced.
+
 * <2015-06-14 Sun 18:32> minimum example
 
 I've been working on this for a bit. I could of sworn I already had notes... but they must not be in the repo yet.
@@ -11,3 +74,38 @@ This is going to basically be the dynamic tutorial from rt wiki... but hopefully
 Step one: simple program making sure rusage works as expected.
 
 Well, I skipped ahead a bit... everything is working fine. mlockall is working as expected. As is mallopt. And yet, I was having trouble with it last week.
+
+* <2015-06-15 Mon 09:52> Back to VoterD
+The test program runs just fine on the "robot" computer as well. Well, at least I ellimated that from the list of suspects. Once again I'm basically left with one culprit: my code.
+
+So back to testing with full system in simulation.
+
+And it acts funny. Somewhere after initing, but before restarts, a few faults happen. Then again on the first few restarts... but seems to level off.
+
+Oh yeah, mallopt is NOT POSIX compliant. So there is that.
+
+Okay, I have a theory: the page faults are comming from fork(). This makes sense, the new process causes a bunch of faults since it is getting a separate heap / stack (you can't just "carve" it out of the current process... even if you wanted to, which you don't).
+
+The restarts only show an increase in page faults for the first few due to some sort of accounting... the parent includes child page faults, and VoterD is the parent at least for the first 3 happenings. I can check this by locking the restartee to 2: Yes! That seems to be it. When killed randomly, we see 3 jumps in page faults. Only 1 jump when the last rep is always killed (leaving the other two children alive).
+
+So, that explains the initial faults on starting the replicas, and the faults when restarting... but not the inbetween faults.
+
+This line is causeing a page fault. The question is why?
+ext_pipes[p_index].buff_count = TEMP_FAILURE_RETRY(read(read_fd, ext_pipes[p_index].buffer, MAX_PIPE_BUFF));
+
+Could it be that the ext_pipes[].buffer hasn't been paged in? Or is the TEMP_FAILURE_RETRY causing it?
+
+OR, could the read be allowing a child to run, and it is the child that is actually causing the page fault? Time to look into that, then go back to our friend VoterD.
+
+** Subcomponents - Filter
+Looks like the default heap is 140K and the default stack is 132K. And none of my programs go over that?
+
+I don't understand what the extra little 4K (page_size) chunks are. Are those library calls? Static libraries shouldn't... but I think dynamic will cause faults. Oh, and by the way glibc is not meant to be linked statically. Sigh.
+
+Can check static vs dynamic libraries using `ldd binary_name` ... all the controllers and VoterD are not dynamic...
+
+So what is causing the fault with TEMP_FAILURE_RETRY? <- it's the `read` not the macro. Of course it's the read. Solution: do "dummy reads" from file descriptors to get the fault out of the way.
+
+This seems like a very unimportant thing to bother with. How long does that fault even take?
+
+Focus here. Do any of the controllers need to reserve heap space?
