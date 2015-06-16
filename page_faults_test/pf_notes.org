@@ -109,3 +109,13 @@ So what is causing the fault with TEMP_FAILURE_RETRY? <- it's the `read` not the
 This seems like a very unimportant thing to bother with. How long does that fault even take?
 
 Focus here. Do any of the controllers need to reserve heap space?
+* <2015-06-16 Tue 10:01> Fooled
+At least for the controllers, I was chaising my tail. The printf was itself causing a pagefault. So when I would add a line to print to check a value, the page fault count would go up. I mistakenly assumed that this was... actually, I don't know what I assumed. But it's annoying.
+
+Okay, with that in mind, adding an early debug printf to everything early on.
+
+WHAT? Using printf works fine for causing the page fault, however debug_print does not (but should just be a macro for printf). Okay, debug_print is using fprintf, maybe that is it?
+
+Well, back to voter. The read there still causes a page fault. But that could be switching control to the child that then faults? Also, after that stretch there are still a few more faults. <- Those faults are also from reads.
+
+Getting better. 3 "unaccounted for" VoterD page faults. I think it's the initialization of the replicas.
