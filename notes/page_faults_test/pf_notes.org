@@ -119,3 +119,14 @@ WHAT? Using printf works fine for causing the page fault, however debug_print do
 Well, back to voter. The read there still causes a page fault. But that could be switching control to the child that then faults? Also, after that stretch there are still a few more faults. <- Those faults are also from reads.
 
 Getting better. 3 "unaccounted for" VoterD page faults. I think it's the initialization of the replicas.
+
+* <2015-06-17 Wed 10:51> Final page fault
+It looks like calling rusage causes one page fault. How about the other?
+
+Sigh. Okay, so the problem is accessing a member of the replicas struct. It goes away (or more likely moves elsewhere) if I reorder the struct. Something to do with the memory allocation? Moving it puts it in a different heap segment. Why are there two heap segments? Why isn't mlockall working for one of them?
+
+The "special heap" is not listed as a heap in /proc/<pid>/maps. Also it does not grow. It is likely the .bss section: data segment for statically allocated variables.
+
+What now? Move it out of .bss, or should I figure out why it isn't being locked in? force.c is hitting that section...
+
+Holy crap. Okay. So when forking, the child AND the parent should both re-walk their memory. Thanks Gabe!
