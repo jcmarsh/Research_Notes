@@ -26,7 +26,7 @@ for data_file in datas:
 		end_paren = line.find(')')
 		if sta_paren >= 0 and end_paren > 0:
 			try:
-				value = int(line[sta_paren + 1:end_paren - 1])
+				value = int(line[sta_paren + 1:end_paren])
 				x[file_num].append(value / 3092.0)
 				y[file_num].append(n)
 				total = total + (value / 3092.0);
