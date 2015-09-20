@@ -1,0 +1,5 @@
+Add this directory to the PYTHONPATH by editing .bashrc to contain:
+
+export PYTHONPATH=$PYTHONPATH:/home/jcmarsh/research/notes/data_proc_scripts
+
+Scripts can then be run with (note no .py): python -m script_name args
