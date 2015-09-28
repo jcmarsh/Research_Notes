@@ -41,6 +41,7 @@ for data_file in datas:
 	print "Average: ", total / n
         print "Std dev: ", np.std(x[file_num - 1])
         print "Maximum: ", max(x[file_num - 1])
+        print "| ", n, " | ", total / n, " | ", np.std(x[file_num - 1]), " | ", max(x[file_num - 1]), " |"
 
 #plt.figure(figsize=(12, 12))
 plt.figure(figsize=(6, 5))

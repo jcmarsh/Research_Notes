@@ -73,3 +73,6 @@ print "WCET ???????: ", max(all_times)
 if sum(all_ped_count) > 0:
         print "avg ped  c/t: ", sum(all_ped_count) / file_num, sum(all_ped_time) / file_num
         print "peds per sec: ", sum(all_ped_count) / (sum(all_ped_time) / 1000.0)
+        print "| ", sum(all_times) / file_num, " | ", np.std(all_times), " | ", max(all_times), " | ", sum(all_ped_count) / (sum(all_ped_time) / 1000.0), " |"
+else:
+        print "| ", sum(all_times) / file_num, " | ", np.std(all_times), " | ", max(all_times), " | ", 0, " |"
