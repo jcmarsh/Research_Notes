@@ -35,13 +35,16 @@ for data_file in datas:
 				print "Failed to interpret line: ", line
 		else:
 			print "Poorly formatted line: ", line
+	last = file_num;
 	file_num = file_num + 1
 	data_file.close()
-        print "Count  : ", n
+	print "Count  : ", n
 	print "Average: ", total / n
-        print "Std dev: ", np.std(x[file_num - 1])
-        print "Maximum: ", max(x[file_num - 1])
-        print "| ", n, " | ", total / n, " | ", np.std(x[file_num - 1]), " | ", max(x[file_num - 1]), " |"
+	print "Std dev: ", np.std(x[last])
+	print "Maximum: ", max(x[last])
+	z = np.polyfit(y[last], x[last], 1)
+	print "fit slope   : ", z[0]
+	print "| ", n, " | ", total / n, " | ", np.std(x[file_num - 1]), " | ", max(x[file_num - 1]), " | ", z[0], " |"
 
 #plt.figure(figsize=(12, 12))
 plt.figure(figsize=(6, 5))
@@ -52,9 +55,15 @@ plt.figure(figsize=(6, 5))
 #n, bins, patches = plt.hist(x, 100, facecolor='g')
 lines = []
 line_types = ['b.', 'r.', 'g.', 'm.', 'k.', 'c.', 'y.']
+tren_types = ['r', 'g', 'm', 'k', 'c', 'y', 'b']
+
 
 for i in range(0, len(datas)):
 	plt.plot(y[i], x[i], line_types[i])
+	# calc the trendline
+	z = np.polyfit(y[i], x[i], 1)
+	p = np.poly1d(z)
+	plt.plot(y[i], p(y[i]), tren_types[i])
 
 plt.xlabel('Restart Count')
 plt.ylabel('Time in Microseconds')
