@@ -1,12 +1,15 @@
 #!/usr/bin/env python
-# Just trying to plot the restart data
+# Round trip communication times.
 import numpy as np
 import matplotlib.pyplot as plt
 
+p_color = '#e66101'
+s_color = '#b2abd2'
+t_color = '#f7f7f7'
 
 N = 4
 
-resScale = ('NP', 'SMR', 'DMR', 'TMR')
+resScale = ('NMR', 'SMR', 'DMR', 'TMR')
 resMeans_0 = (14.0143565888, 27.3617210989, 40.7126991814, 53.2786750175)
 resStd_0 = (0.249131762173, 0.515115130363, 0.724440297815, 0.911442091626)
 resLong_0 = (19.7205692109, 40.5924967658, 58.7490297542, 70.1151358344)
@@ -28,14 +31,14 @@ fig, ax = plt.subplots() #figsize=(6, 5))
 #ax.xaxis.get_ticklabels().set_fontsize(10)
 #ax.yaxis.ticklabels.set_fontsize(10)
 
-rects2 = ax.bar(ind + .05 + 0 * width, resLong_0, width, color='#998ec3', label='WCET 84B')
-rects1 = ax.bar(ind + .05 + 0 * width, resMeans_0, width, color='#f1a340', label='Mean 84B', yerr=resStd_0,  error_kw=dict(elinewidth=8, ecolor='#f7f7f7', capsize=10))
+rects2 = ax.bar(ind + .05 + 0 * width, resLong_0, width, color=s_color, label='WCET 84B')
+rects1 = ax.bar(ind + .05 + 0 * width, resMeans_0, width, color=p_color, label='Mean 84B', yerr=resStd_0,  error_kw=dict(elinewidth=8, ecolor=t_color, capsize=10))
 
-rects4 = ax.bar(ind + .05 + 1 * width, resLong_1024, width, color='#998ec3', label='WCET 1024B', hatch='..')
-rects3 = ax.bar(ind + .05 + 1 * width, resMeans_1024, width, color='#f1a340', label='Mean 1024B', yerr=resStd_1024, hatch='..', error_kw=dict(elinewidth=8, ecolor='#f7f7f7', capsize=10))
+rects4 = ax.bar(ind + .05 + 1 * width, resLong_1024, width, color=s_color, label='WCET 1024B', hatch='..')
+rects3 = ax.bar(ind + .05 + 1 * width, resMeans_1024, width, color=p_color, label='Mean 1024B', yerr=resStd_1024, hatch='..', error_kw=dict(elinewidth=8, ecolor=t_color, capsize=10))
 
-rects6 = ax.bar(ind + .05 + 2 * width, resLong_2048, width, color='#998ec3', label='WCET 2048B', hatch='//\\\\')
-rects5 = ax.bar(ind + .05 + 2 * width, resMeans_2048, width, color='#f1a340', label='Mean 2048B', yerr=resStd_2048, hatch='//\\\\', error_kw=dict(elinewidth=8, ecolor='#f7f7f7', capsize=10))
+rects6 = ax.bar(ind + .05 + 2 * width, resLong_2048, width, color=s_color, label='WCET 2048B', hatch='//\\\\')
+rects5 = ax.bar(ind + .05 + 2 * width, resMeans_2048, width, color=p_color, label='Mean 2048B', yerr=resStd_2048, hatch='//\\\\', error_kw=dict(elinewidth=8, ecolor=t_color, capsize=10))
 
 
 # add some text for labels, title and axes ticks

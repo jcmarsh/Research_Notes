@@ -3,6 +3,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+p_color = '#e66101'
+s_color = '#b2abd2'
+t_color = '#f7f7f7'
 
 N = 7
 # resScale = (1092, 2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768, 49152, 65536)
@@ -22,8 +25,8 @@ fig, ax = plt.subplots() #figsize=(6, 5))
 #ax.xaxis.get_ticklabels().set_fontsize(10)
 #ax.yaxis.ticklabels.set_fontsize(10)
 
-rects2 = ax.bar(ind + .1, resLong, width, color='#998ec3', log=True, label='WCET')
-rects1 = ax.bar(ind + .1, resMeans, width, color='#f1a340', log=True, label='Mean', yerr=resStd,  error_kw=dict(elinewidth=8, ecolor='#f7f7f7', capsize=10))
+rects2 = ax.bar(ind + .1, resLong, width, color=s_color, log=True, label='WCET')
+rects1 = ax.bar(ind + .1, resMeans, width, color=p_color, log=True, label='Mean', yerr=resStd,  error_kw=dict(elinewidth=8, ecolor=t_color, capsize=10))
 
 # add some text for labels, title and axes ticks
 ax.set_ylabel('Time (uS)', fontsize=16)
