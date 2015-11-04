@@ -27,9 +27,9 @@ for data_file in datas:
 		if sta_paren >= 0 and end_paren > 0:
 			try:
 				value = int(line[sta_paren + 1:end_paren])
-				x[file_num].append(value / 3092.0)
+				x[file_num].append(value)
 				y[file_num].append(n)
-				total = total + (value / 3092.0);
+				total = total + (value);
 				n = n + 1
 			except ValueError:
 				print "Failed to interpret line: ", line
