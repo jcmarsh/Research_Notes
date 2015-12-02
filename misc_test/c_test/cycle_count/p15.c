@@ -18,22 +18,29 @@ static inline int64_t Now() {
 			// The counter is set up to count every 64th cycle
 			return (int64_t)((pmccntr) * 64);  // Should optimize to << 6
 		}
-    }
+	} else {
+	  printf("Can't read from user mode\n");
+	}
 }
 
-int main(int charc, char* argv[]) {
+int main(int argc, char* argv[]) {
 	printf("Test program for cycle count on ARM using p15\n");
 	int64_t current, last;
 	int i, sum = 0;
+	int max = 10000;
+
+	if (argc > 1) {
+	  max = atoi(argv[1]);
+	}
 
 	last = Now();
-	for (i = 0; i < 10000; i++) {
+	for (i = 0; i < max; i++) {
 		// loop to take some time.
 		sum += i;
 	}
 	current = Now();
 
-	printf("Loop took: %lld cycles.\n", current - last);
+	printf("Looped %d times in %lld cycles.\n", max, current - last);
 
 	return 0;
 }
