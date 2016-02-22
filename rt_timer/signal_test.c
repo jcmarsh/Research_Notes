@@ -11,19 +11,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "tas_time.h"
 
 #define RESTART_SIGNAL SIGRTMIN + 1
-
-#define rdtscll(value)				       \
-  __asm__ ("rdtsc\n\t"				       \
-	   "shl $(32), %%rdx\n\t"		       \
-	   "or %%rax, %%rdx" : "=d" (value) : : "rax")
-
-long generate_timestamp( void ) {
-  long ts;
-  rdtscll( ts );
-  return ts;
-}
 
 static void restartHandler(int signo, siginfo_t *si, void *unused) {
   long curr_time = generate_timestamp();

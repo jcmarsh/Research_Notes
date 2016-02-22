@@ -2,17 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-
-#define rdtscll(value)				       \
-  __asm__ ("rdtsc\n\t"				       \
-	   "shl $(32), %%rdx\n\t"		       \
-	   "or %%rax, %%rdx" : "=d" (value) : : "rax")
-
-long generate_timestamp( void ) {
-  long ts;
-  rdtscll( ts );
-  return ts;
-}
+#include "tas_time.h"
 
 // TODO: lock to one cpu?
 
