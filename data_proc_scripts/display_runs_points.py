@@ -26,7 +26,7 @@ for data_file in datas:
 		end_paren = line.find(')')
 		if sta_paren >= 0 and end_paren > 0:
 			try:
-				value = int(line[sta_paren + 1:end_paren])
+				value = float(line[sta_paren + 1:end_paren])
 				x[file_num].append(value)
 				y[file_num].append(n)
 				total = total + (value);

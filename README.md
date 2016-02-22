@@ -10,6 +10,7 @@ Research_Notes
 * `./misc_test/` - Miscellaneous test programs
   * `./misc_test/asm_test/` - Test out / exercise various things in assembly
   * `./misc_test/c_test/` - Test out various things in c (call conventions, sizeof, etc.)
+    * `./misc_test/c_test/anon_vma/` - Run this to see if anon_vma_clone is allowing linear chain growth when children keep forking.
   * `./misc_test/flex_bison/` - Trying out flex and bison.
   * `./misc_test/python_test/` - Fun with python.
     * `new_application.py` - create a new cFE application similar to the example app but with user defined names.

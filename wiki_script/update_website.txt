@@ -4,7 +4,8 @@ The website content is all kept in ~/Dropbox/website/web_source ($WEB_SOURCE for
 
 First, my personal wiki should be downloaded as a static copy into
 $WEB_SOURCE/wiki/
-This can be done by navigating to that directory, and then running download_strip.sh there.
+Well, first delete the existing contents.
+This can be done by navigating to that directory (wiki, that is), and then running download_strip.sh there.
 NOTE: Should likely turn off Dropbox syncing first!
 
 Now that the website source is ready to go, it's time to generate the website.
@@ -12,10 +13,15 @@ This can be done by going to ~/research/gen-site/ and running
 make clean
 make
 
+!!!! Acad is going away. !!!!
 Tar, and upload to acad:
 tar cvf website.tar ./generated/
 scp website.tar jcmarsh@acad.gwu.edu:~/
 
 Login to acad, delete the old public_html, unpack the website there, and run the fix html script.
+
+ssh jcmarsh@acad.gwu.edu
+cd public_html; mv ../website.tar ./; tar -xvf website.tar; mv ./generated/* ./; rm -r generated
+fix_html
 
 
