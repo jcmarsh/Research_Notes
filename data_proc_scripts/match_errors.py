@@ -62,9 +62,11 @@ else:
 # print pid_count, len(pids_injected), len(pids_replaced)
 
 win_count = 0;
-for i in range(0, pid_count):
-    if pids_injected[i] == pids_replaced[i]:
+i_inj = 0
+for i_rep in range(0, pid_count):
+    print 'injected: ', pids_injected[i_inj], ' -> ', pids_replaced[i_rep], ' :result', pids_injected[i_inj] == pids_replaced[i_rep]
+    if pids_injected[i_inj] == pids_replaced[i_rep]:
         win_count = win_count + 1
-    # print pids_injected[i], ' -> ', pids_replaced[i]
+        i_inj = i_inj + 1
 
 print 'Matches: ', win_count, '\tFailures: ', pid_count - win_count
