@@ -9,6 +9,13 @@
 /*
  * Demonstrates delayed timer activations for a RT process by a
  * lower priority RT process on the same core.
+ *
+ * The source of the priority inversion is NOT ksoftirqd
+ *    Confirm by setting all ksoftirqd processes to priority > 40
+ *    sudo chrt -p 55 3 (sets pid 3 to priority 55 (RR default, -f for FIFO))
+ *
+ * Caused by: ktimersoftd
+ *    Confirm as described above.
  */
 
 int main (int argc, char** argv) {
