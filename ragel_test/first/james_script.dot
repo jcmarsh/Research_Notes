@@ -1,0 +1,17 @@
+digraph james_script {
+	rankdir=LR;
+	node [ shape = point ];
+	ENTRY;
+	en_1;
+	node [ shape = circle, height = 0.2 ];
+	node [ fixedsize = true, height = 0.65, shape = doublecircle ];
+	3;
+	node [ shape = circle ];
+	1 -> 3 [ label = "'0'..'9'" ];
+	2 -> 2 [ label = "'\\t'..'\\r', SP" ];
+	2 -> 3 [ label = "'0'..'9'" ];
+	3 -> 2 [ label = "'\\t'..'\\r', SP" ];
+	3 -> 3 [ label = "'0'..'9'" ];
+	ENTRY -> 1 [ label = "IN" ];
+	en_1 -> 1 [ label = "main" ];
+}
