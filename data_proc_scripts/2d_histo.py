@@ -39,6 +39,7 @@ for data_file in datas:
 				print "Failed to interpret line: ", line
 		else:
 			print "Poorly formatted line: ", line
+        print "File: ", sys.argv[1]
 	print "Count  : ", n
 	print "Average Velocity: ", total_vel / n
 	file_num = file_num + 1
