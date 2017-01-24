@@ -36,8 +36,10 @@ for data_file in datas:
 	y.append([])
 	for line in data_file:
 		#     fprintf(log_file, "(%f,\t%f,\t%f,\t%f,\t%f,\t%f)\n",
-		#                         min, velocity, distance, time_this_round, pose[0], pose[1]); 
-		if line[0] == '(' and line[-2] == ')':
+		#                         min, velocity, distance, time_this_round, pose[0], pose[1]);
+                if len(line) < 2:
+                        print 'Stub line: ', line
+		elif line[0] == '(' and line[-2] == ')':
 			try:
 				values = line[1:-2]
 				value = values.split(',')
