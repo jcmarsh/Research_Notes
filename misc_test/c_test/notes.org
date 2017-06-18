@@ -1,0 +1,59 @@
+Incomplete notes on what these tests are supposed to do...
+
+* anon_vma
+
+* arch_check
+
+* array
+
+* ascii
+
+* bitwise
+
+* call_conventions
+
+* casts
+
+* client_socket
+
+* clock_gettime
+
+* cycle_count
+
+* fifo
+
+* force_copy
+
+* getpagesize
+
+* global_test
+Sanity check on updating a global variable from within a for loop statement for a paper review.
+
+* ifdef
+
+* linked
+
+* parse_interrupts
+
+* pipe_order
+
+* pointers
+
+* select
+
+* self_fork
+
+* server_socket
+
+* shared_mmap
+
+* sizes
+
+* static_var
+Testing out the "implicit int" rule in C. Yet another reason to turn on -Wall and Werror.
+
+* syscall
+
+* threadoffset_test.c
+
+* unix_domain_socket
