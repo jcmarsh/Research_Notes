@@ -1,2 +1,0 @@
-#!/bin/sh
-/sbin/rmmod enable_arm_pmu || exit 1

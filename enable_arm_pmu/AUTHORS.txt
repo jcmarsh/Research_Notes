@@ -1,3 +1,0 @@
-Author, target of blame:
-
-  Austin Seipp <aseipp [@at] pobox [.dot] com>
