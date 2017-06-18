@@ -1,0 +1,58 @@
+digraph foo {
+	graph [compound=true];
+	rankdir=LR;
+	node [ shape = point ];
+	ENTRY;
+	//node [ shape = circle, height = 0.2 ];
+	node [ shape = ellipse, height = 0.65 ];
+	//node [ shape = circle ];
+	
+	subgraph cluster_voter {
+                style = rounded;
+		label = "Voter Execution";
+		idle;
+		vote;
+		subgraph cluster_dup {
+		        label = "Copy Message";
+                        duplicate_1;
+                        duplicate_2;
+                        duplicate_3;
+		}
+		subgraph cluster_recover {
+		        label = "Recovery";
+			failure_timeout;
+			failure_message;
+		}
+	}
+	subgraph cluster_wait {
+                style = rounded;
+	        label = "Replica Execution";
+        	wait_1;
+        	wait_2;
+        	wait_3;
+        }
+	idle -> duplicate_1 [ label = "message_in" ];
+
+	// These point to the cluster, not the individual node
+	// wait_1 -> duplicate [ label = "response_1" ltail=cluster_wait];
+      	// wait_1 -> failure_timeout [ label = "timeout" ltail=cluster_wait];
+	// duplicate -> wait_1       [ label = "send_message" lhead=cluster_wait];
+
+	duplicate_1 -> wait_1 [ label = "sent_msg_1" ];
+	wait_1 -> duplicate_2 [ label = "response_1" ];
+	wait_1 -> failure_timeout [ label = "timeout_1" ];
+
+	duplicate_2 -> wait_2 [ label = "sent_msg_2" ];
+	wait_2 -> duplicate_3 [ label = "response_2" ];
+	wait_2 -> failure_timeout [ label = "timeout_2" ];
+
+	duplicate_3 -> wait_3 [ label = "sent_msg_3" ];
+	wait_3 -> vote [ label = "response_3" ];
+	wait_3 -> failure_timeout [ label = "timeout_3" ];
+
+
+	vote -> idle              [ label = "send vote msg" ];
+	vote -> failure_message   [ label = "message mismatch" ];
+	
+	ENTRY -> idle [ label = "Start" ];
+}

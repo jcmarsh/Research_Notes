@@ -1,0 +1,19 @@
+digraph foo {
+	rankdir=LR;
+	node [ shape = point ];
+	ENTRY;
+	node [ shape = circle, height = 0.2 ];
+	node [ fixedsize = true, height = 0.65, shape = doublecircle ];
+	node [ shape = circle ];
+	idle -> duplicate [ label = "message_in" ];
+	duplicate -> wait_1 [ label = "send_rep_1" ];
+	wait_1 -> duplicate [ label = "response_1" ];
+	wait_1 -> failure   [ label = "timeout" ];
+	duplicate -> wait_2 [ label = "send_rep_2" ];
+	wait_2 -> duplicate [ label = "response_2" ];
+	wait_2 -> failure   [ label = "timeout" ];
+	duplicate -> vote   [ label = "all responses" ];
+	vote -> idle        [ label = "send vote msg" ];
+	vote -> failure     [ label = "message mismatch" ];
+	ENTRY -> idle [ label = "Start" ];
+}

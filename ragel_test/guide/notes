@@ -1,0 +1,3 @@
+ragel -V test.rl > graph.viz
+dot -Tsvg graph.dot -o graph.svg
+./a.out foo
