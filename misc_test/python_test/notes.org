@@ -1,0 +1,14 @@
+* args_test
+Quick test of argparse package.
+
+* old
+** imp_pot_controller.py
+Controller for player / stage (I think).
+
+** new_application.py
+Script for making a new cFS application, but requires some template files.
+
+** normal_test.py
+
+* visualizations
+Scripts for producing the surface area graphics. Unfortunately the hatching doesn't display correctly in every pdf viewer so the overlay gets lost. Includes some of the data used to generate (in .ods, also copy pasted into the scripts). Could use some cleanup.

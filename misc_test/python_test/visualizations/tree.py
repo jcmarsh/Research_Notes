@@ -39,7 +39,10 @@ class Proctmap:
             line_y = 1 * float(t_base[count]) / size(comp)
             #self.draw_rectangle(lower, [upper[0], line_y], 'r')
             #self.ax.plot([lower[0], upper[0]], [line_y, line_y], color='r', linestyle='-', linewidth=2)
-            r = Rectangle(lower, upper[0]-lower[0], line_y - lower[1], edgecolor='k', facecolor='w', hatch='X', alpha=0.5)
+
+            # Apparantly hatch marks can't be handled by matplotlib: https://github.com/matplotlib/matplotlib/issues/3841
+            #r = Rectangle(lower, upper[0]-lower[0], line_y - lower[1], edgecolor='k', facecolor='w', hatch='X', alpha=0.5)
+            r = Rectangle(lower, upper[0]-lower[0], line_y - lower[1], edgecolor='k', facecolor='w', alpha=0.5)
 
             count = count + 1
             
@@ -79,11 +82,11 @@ if __name__ == '__main__':
     def random_color(thing):
         return (random.random(),random.random(),random.random())
 
-    # L4 TMR
-    # tree = ((69, (45, 45, 45)), (59, (20, 20, 20)), (106, (24, 24, 24)), (163, (2087, 2087, 2087)))
+    # L4 TMR 0% benign
+    #tree_protected = ((69, (45, 45, 45)), (59, (20, 20, 20)), (163, (2087, 2087, 2087)), (106, (24, 24, 24)))
     # tree = ((69, (45, 45, 45)), (59, (20, 20, 20)), (106, (24, 24, 24)), (82, (1044, 1044, 1044)))
-    # L4 NMR
-    #tree = ((36, 35, 1299, 48))
+    # L4 NMR 0% benign
+    #tree_baseline = ((36, 35, 1299, 48))
 
     # BBB DMR
     tree_protected = ((243, (122, 122)), (162, (146, 146)), (398, (5117, 5117)), (277, (79, 79)))
