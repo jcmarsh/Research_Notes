@@ -6,6 +6,10 @@
 #include <stdio.h>
 
 extern FILE *yyin;
+typedef struct yy_buffer_state * YY_BUFFER_STATE;
+extern int yyparse();
+extern YY_BUFFER_STATE yy_scan_string(char * str);
+extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 
 int yylex();
 int yyerror(char *s);
@@ -266,10 +270,18 @@ int main(int argc, char **argv) {
       perror(argv[1]);
       return(1);
     }
-  }
 
-  printf("Here the parsing happens.\n");
-  yyparse();
+    yyparse();
+  } else {
+    YY_BUFFER_STATE hank;
+    hank = yy_scan_string("0x001006f0	0xebffffbb	BL 0x001005e4\n");
+    yyparse();
+    yy_delete_buffer(hank);
+
+    hank = yy_scan_string("0x001006f0	0xebffffbb	BL 0x001005e4\n");
+    yyparse();
+    yy_delete_buffer(hank);
+  }
 
   return 0;
 }
