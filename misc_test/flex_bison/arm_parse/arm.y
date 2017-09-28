@@ -7,33 +7,52 @@
 
 extern FILE *yyin;
 
+int yylex();
+int yyerror(char *s);
+
 %}
 
-%token BENCH
-%token BI
-%token SINGLE
-%token COMPONENT
-%token ARGS
+%union {
+  int ival;
+  float fval;
+  char *sval;
+}
+
+%token <sval> ADDRESS
 %token EOL
+%token LOAD
+%token LOAD_M
+%token INCREMENT
+%token DECREMENT
+%token MOD_B
+%token <sval> REGISTER
+%token LIST_S
+%token LIST_E
+%token SQUARE_S
+%token SQUARE_E
+%token COMMA
 
 %%
 line:
-| line relationship EOL { }
-| line invocation EOL { }
+| line ADDRESS ADDRESS command EOL { printf("Is that a line?\n"); }
+| line EOL
 ;
 
-relationship:
-  BENCH BI comp { printf("The benches: Bench launches %s\n", $3); }
-| comp BI comp { printf("bi between %s and %s\n", $1, $3); }
-| comp SINGLE comp { printf("single between %s and %s\n", $1, $3); }
+command:
+  load REGISTER COMMA SQUARE_S REGISTER SQUARE_E { printf("Nice.\n"); }
+| load REGISTER COMMA LIST_S REGISTER COMMA REGISTER COMMA REGISTER COMMA REGISTER LIST_E { printf("Should make a register list a separate token\n"); }
 ;
 
-invocation:
-  comp ARGS { printf("Invoking something: %s with args %s\n", $1, $2); }
+load:
+LOAD {printf("LOAD\n");}
+| LOAD MOD_B {printf("LOAD MOD_B\n");}
+| LOAD_M {printf("LOAD_M\n");}
+| LOAD_M in_dec MOD_B {printf("LOAD_M in_dec MOD_B\n");}
 ;
 
-comp:
-  COMPONENT { $$ = $1; }
+in_dec:
+  INCREMENT
+| DECREMENT
 ;
 
 %%
@@ -45,11 +64,13 @@ int main(int argc, char **argv) {
     }
   }
 
+  printf("Here the parsing happens.\n");
   yyparse();
 
   return 0;
 }
 
-yyerror(char *s) {
+int yyerror(char *s) {
   fprintf(stderr, "error: %s\n", s);
+  return 0;
 }

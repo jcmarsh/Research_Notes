@@ -4,6 +4,7 @@ default: arm.l arm.y
 	cc arm.tab.c lex.yy.c -lfl
 
 clean:
+	rm -f a.out
 	rm -f arm.tab.c
 	rm -f arm.tab.h
 	rm -f lex.yy.c
