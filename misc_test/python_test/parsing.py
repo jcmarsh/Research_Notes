@@ -27,3 +27,5 @@ def parse_test(test_str):
 parse_test("0x00101614 0x979ff103 LDRLS r15, [r15, r3, LSL #0x2]")
 parse_test("0x0010152c 0xe5d20000 LDRB r0, [r2]")
 parse_test('0x0010152c\t0xe5d20000\tLDRB r0, [r2]\r\n\r>')
+# LDMIB uses the first register as a base address
+parse_test('0x00101e00\t0xe9d1bb4b\tLDMIB r1, {r0, r1, r3, r6, r8, r9, r11, r12, r13, r15}\r\n\r>'
