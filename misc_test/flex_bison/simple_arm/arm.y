@@ -4,6 +4,7 @@
 
 %{
 #include <stdio.h>
+#include "arm.h"
 
 extern FILE *yyin;
 typedef struct yy_buffer_state * YY_BUFFER_STATE;
@@ -15,7 +16,9 @@ int yylex();
 int yyerror(char *s);
 
 int l_count = 0;
-%}
+
+char registers[200] = {0};
+ %}
 
 %union {
   int ival;
@@ -53,6 +56,7 @@ int l_count = 0;
 %type<sval> s_reg_and_off
 %type<sval> reg_and_off
 %type<sval> rec_reg
+%type<sval> store_single
 
 %token UND
 %token DONTCARE
@@ -128,8 +132,8 @@ load_multiple:
 ;
 
 store_single:
-C_STR dest_reg s_reg_and_off UPDATE { printf("STR! dest_reg: %s args %s\n", $2, $3); }
-| C_STR dest_reg s_reg_and_off { printf("STR dest_reg: %s args %s\n", $2, $3); }
+C_STR dest_reg s_reg_and_off UPDATE { printf("STR! dest_reg: %s args %s\n", $2, $3); sprintf(registers, "%s", $3); }
+| C_STR dest_reg s_reg_and_off { printf("STR dest_reg: %s args %s\n", $2, $3); sprintf(registers, "%s",  $3);}
 ;
 
 store_multiple:
@@ -138,8 +142,18 @@ C_STM REGISTER UPDATE COMMA LIST_S rec_reg LIST_E { printf("STM! dest: %s list: 
 ;
 
 %%
-int main(int argc, char **argv) {
-  
+int parse_line(char *result, char *parse) {
+  YY_BUFFER_STATE state;
+  state = yy_scan_string(parse);
+  yyparse();
+  yy_delete_buffer(state);
+
+  sprintf(result, "%s", registers);
+  return 0;
+}
+
+/*
+int main(int argc, char **argv) {  
   if (argc > 1) {
     if (!(yyin = fopen(argv[1], "r"))) {
       perror(argv[1]);
@@ -148,18 +162,14 @@ int main(int argc, char **argv) {
 
     yyparse();
   } else {
-    YY_BUFFER_STATE hank;
-    hank = yy_scan_string("0x001006f0	0xebffffbb	BL 0x001005e4\n");
-    yyparse();
-    yy_delete_buffer(hank);
-
-    hank = yy_scan_string("0x001005e8      0xe28db000      ADD r11, r13, #0x0\n");
-    yyparse();
-    yy_delete_buffer(hank);
+    char result[200] = {0};
+    parse_line(result, "0x00100608	0xe50b3014	STR r3, [r11, #-0x14]\n");
+    printf("Result: %s\n", result);
   }
 
   return 0;
 }
+*/
 
 int yyerror(char *s) {
   fprintf(stderr, "error: %s\n", s);
