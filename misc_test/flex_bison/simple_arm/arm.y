@@ -60,6 +60,7 @@ char registers[200] = {0};
 
 %token UND
 %token DONTCARE
+%token UNKNOWN
 
  // Formatting
 %token LIST_S
@@ -132,27 +133,33 @@ load_multiple:
 ;
 
 store_single:
-C_STR dest_reg s_reg_and_off UPDATE { printf("STR! dest_reg: %s args %s\n", $2, $3); sprintf(registers, "%s", $3); }
-| C_STR dest_reg s_reg_and_off { printf("STR dest_reg: %s args %s\n", $2, $3); sprintf(registers, "%s",  $3);}
+C_STR dest_reg s_reg_and_off UPDATE { printf("STR! dest_reg: %s args %s\n", $2, $3);
+  sprintf(registers, "%s", $3); }
+| C_STR dest_reg s_reg_and_off { printf("STR dest_reg: %s args %s\n", $2, $3);
+  sprintf(registers, "%s",  $3);}
 ;
 
 store_multiple:
-C_STM REGISTER UPDATE COMMA LIST_S rec_reg LIST_E { printf("STM! dest: %s list: %s\n", $2, $6); }
-| C_STM dest_reg LIST_S rec_reg LIST_E { printf("STM dest: %s list: %s\n", $2, $4); }
+C_STM REGISTER UPDATE COMMA LIST_S rec_reg LIST_E { printf("STM! dest: %s list: %s\n", $2, $6);
+  sprintf(registers, "%s, %s", $2, $6); }
+| C_STM dest_reg LIST_S rec_reg LIST_E { printf("STM dest: %s list: %s\n", $2, $4);
+    sprintf(registers, "%s, %s", $2, $4); }
 ;
 
 %%
 int parse_line(char *result, char *parse) {
   YY_BUFFER_STATE state;
+  sprintf(registers, "none");
+
   state = yy_scan_string(parse);
-  yyparse();
+  int retval = yyparse();
   yy_delete_buffer(state);
 
   sprintf(result, "%s", registers);
-  return 0;
+  return retval;
 }
 
-/*
+
 int main(int argc, char **argv) {  
   if (argc > 1) {
     if (!(yyin = fopen(argv[1], "r"))) {
@@ -169,7 +176,7 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-*/
+
 
 int yyerror(char *s) {
   fprintf(stderr, "error: %s\n", s);
