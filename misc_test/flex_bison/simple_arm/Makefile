@@ -3,14 +3,14 @@ parser: arm.l arm.y
 	flex arm.l
 	cc -o arm_parser arm.tab.c lex.yy.c -lfl
 	gcc -c -fpic arm.tab.c lex.yy.c -lfl
-	gcc -shared -o libarm.so arm.tab.o lex.yy.o -lfl
+	gcc -shared -o libarmparse.so arm.tab.o lex.yy.o -lfl
 
 lib_test:
-	gcc -o lib_test lib_test.c -larm -lfl -L./
+	gcc -o lib_test lib_test.c -larmparse -lfl -L./
 
 clean:
 	rm -f *.o
-	rm -f libarm.so
+	rm -f libarmparse.so
 	rm -f arm_parser
 	rm -f arm.tab.c
 	rm -f arm.tab.h
