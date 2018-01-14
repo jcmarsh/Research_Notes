@@ -23,3 +23,13 @@ Research_Notes
 * `./task_inspect/` - A system call to a loadable module intended to allow for quick debugging of a process's kernel side data structures.
 * `./tmux_dev` - Script to set up a tmux working environment
 * `./wiki_script` - Scripts for updating my personal website from my local wiki.
+
+## Random bits
+
+So, github does a few funny things when considering what counts in the running green ticker.
+Commits done to forks, for example, don't seem to count.
+Which is all fine, until you are using it to track a resolution to work at least one hour every day and the only commit you made was to a fork.
+
+Fortunately, the date for a commit can be specified:
+git commit --date 2018-01-08T19:49:00
+
