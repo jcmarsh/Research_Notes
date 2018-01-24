@@ -1,0 +1,3 @@
+Needs to have python 3.x (3.4? I can't keep track) to run. For me, that is installed here:
+
+~/research_master/master_jtag/drseus/python/bin/python ./consumer.py
