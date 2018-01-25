@@ -1,14 +1,18 @@
 from serial import Serial
 
+
 print("Ello!")
 
 serial_con = Serial(port='/dev/ttyUSB1', baudrate=460800, timeout=15, rtscts=True)
 
+counter = 0
 while True:
-    char = serial_con.read()
-    dec_char = char.decode('utf-8', 'replace').replace('\x00', 'X')
 
-    print(dec_char, end="")
+    counter = serial_con.inWaiting()
+    if counter:
+        char = serial_con.read(counter).decode('utf-8')
+        print("\nInWaiting: ", counter)
+        print(char, end='')
 
 print("Done.")
 
