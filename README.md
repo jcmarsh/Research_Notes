@@ -33,3 +33,4 @@ Which is all fine, until you are using it to track a resolution to work at least
 Fortunately, the date for a commit can be specified:
 git commit --date 2018-01-08T19:49:00
 
+Alright, I need to remember to commit my Daily Log everyday.
