@@ -32,8 +32,14 @@ for h in range(0, height):
         for w in range(0, width):
                 pixel = datas[(width * h) + w]
                 #print w, h, pixel
-                #if (pixel[0] + pixel[1] + pixel[2]) < 386:
-                if (pixel[1]) < 128:
+                if (pixel[0] + pixel[1] + pixel[2]) < 500:
+                        x.append(w)
+                        y.append(height - h)
+                if (pixel[0] + pixel[1] + pixel[2]) < 350:
+                        x.append(w)
+                        y.append(height - h)
+                if (pixel[0] + pixel[1] + pixel[2]) < 200:
+                #if (pixel[0]) < 128:
                         #print(w, h, pixel[1])
                         x.append(w)
                         #if (datas[(h * height) + w][1]) > 128:
@@ -41,9 +47,12 @@ for h in range(0, height):
                 #else:
                         #print("Didn't make it", w, h, pixel[1])
 
-plt.figure(figsize=(width, height))
+#plt.figure(figsize=(width, height))
+#plt.figure(figsize=((width / 300), (height / 300)))
 
-plt.hexbin(x, y, gridsize=60, cmap='gist_heat_r') #'gray_r')
+plt.hexbin(x, y, gridsize=80, cmap='gist_heat_r') #'gray_r')
 plt.axis([0, width, 0, height])
+
+plt.savefig("out.png", bbox_inches='tight') #, dpi=100)
 
 plt.show()
