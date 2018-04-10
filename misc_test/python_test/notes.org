@@ -1,6 +1,9 @@
 * args_test
 Quick test of argparse package.
 
+* bitwise
+When stepping a programming in OpenOCD, the cpsr register is returned. This is the code that reads those flags and takes
+
 * old
 ** imp_pot_controller.py
 Controller for player / stage (I think).
