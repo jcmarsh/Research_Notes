@@ -15,6 +15,7 @@ Research_Notes
   * `./misc_test/python_test/` - Fun with python.
     * `new_application.py` - create a new cFE application similar to the example app but with user defined names.
 * `./data_results` - 
+* `./openocd_misc/` - Work related to using scripting OpenOCD. Includes a test to add ARM PLD command support to OpenOCD itself (the patch may never get merged...) and a parser for the the ARM disassemble that OpenOCD returns.
 * `./qemu_net/` - Scripts for (hopefully) setting up the tap based network for qemu.
 * `./rt_ipc/` - 
 * `./rt_timer/` - 
