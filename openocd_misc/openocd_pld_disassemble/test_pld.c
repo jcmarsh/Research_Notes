@@ -25,8 +25,8 @@ static int evaluate_pld(uint32_t opcode,
 {
 	// only called if opcode starts with 11110
 	/* PLD */
-	// if ((opcode & 0x0d70f000) == 0x0550f000) {
-	if ((opcode & 0x0d50f000) == 0x0550f000) { // Should allow PLDW commands as well
+	//if ((opcode & 0x0d70f000) == 0x0550f000) {
+	if ((opcode & 0x0d30f000) == 0x0510f000) { // Should allow PLDW commands as well
 		uint8_t Rn;
 		uint8_t U;
 		unsigned offset;
@@ -155,9 +155,13 @@ static int evaluate_pld(uint32_t opcode,
 void main() {
 
   // Sample pld instructions: 0x00101420 0xf5d4f000 PLD ...TODO...
-  uint32_t address = 0x00101420;
-  uint32_t opcode =  0xf5d4f000;
+  uint32_t address;
+  uint32_t opcode;
   struct arm_instruction inst;
+
+  // Test PLD Immediate
+  address = 0x00101420;
+  opcode =  0xf5d4f000;
 
   evaluate_pld(opcode, address, &inst);
   printf("output text: %s\n", inst.text);
@@ -173,4 +177,13 @@ void main() {
 
   evaluate_pld(opcode, address, &inst);
   printf("output text: %s\n", inst.text);
+
+  // Test PLDW Immediate
+  address = 0x00100800;
+  opcode = 0xf597f042;
+
+  evaluate_pld(opcode, address, &inst);
+  printf("output text: %s\n", inst.text);
+
+  return;
 }
