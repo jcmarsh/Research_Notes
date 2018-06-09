@@ -25,9 +25,10 @@ static int evaluate_pld(uint32_t opcode,
 {
 	// only called if opcode starts with 11110
 	/* PLD */
-	// if ((opcode & 0x0d70f000) == 0x0550f000) {
-	if ((opcode & 0x0d50f000) == 0x0550f000) { // Should allow PLDW commands as well
-		uint8_t Rn;
+	//if ((opcode & 0x0d70f000) == 0x0550f000) {
+	//if ((opcode & 0x0d50f000) == 0x0550f000) { // Should allow PLDW commands as well
+        if ((opcode & 0x0d30f000) == 0x0510f000) { // Should allow PLDW commands as well
+ 		uint8_t Rn;
 		uint8_t U;
 		unsigned offset;
 		// instruction->type = ARM_PLD;
@@ -171,6 +172,38 @@ void main() {
   address = 0x00100800;
   opcode = 0xf5d7f000;
 
+  evaluate_pld(opcode, address, &inst);
+  printf("output text: %s\n", inst.text);
+
+  opcode = 0xf5d4f000; //  pld[r4]
+  evaluate_pld(opcode, address, &inst);
+  printf("output text: %s\n", inst.text);
+
+  opcode = 0xf594f000; //  pldw[r4]
+  evaluate_pld(opcode, address, &inst);
+  printf("output text: %s\n", inst.text);
+
+  opcode = 0xf5d4f00c; //  pld[r4, #12]
+  evaluate_pld(opcode, address, &inst);
+  printf("output text: %s\n", inst.text);
+
+  opcode = 0xf594f00c; //  pldw[r4, #12]
+  evaluate_pld(opcode, address, &inst);
+  printf("output text: %s\n", inst.text);
+
+  opcode = 0xf7d4f005; //  pld[r4, r5]
+  evaluate_pld(opcode, address, &inst);
+  printf("output text: %s\n", inst.text);
+
+  opcode = 0xf794f005; //  pldw[r4, r5]
+  evaluate_pld(opcode, address, &inst);
+  printf("output text: %s\n", inst.text);
+
+  opcode = 0xf5dff000; //  pld[pc]; 8170 <Thats_all_folks>
+  evaluate_pld(opcode, address, &inst);
+  printf("output text: %s\n", inst.text);
+
+  opcode = 0xf51ff004; //  pldw[pc, #-4]; 8170 <Thats_all_folks>
   evaluate_pld(opcode, address, &inst);
   printf("output text: %s\n", inst.text);
 }
