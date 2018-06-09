@@ -156,9 +156,13 @@ static int evaluate_pld(uint32_t opcode,
 void main() {
 
   // Sample pld instructions: 0x00101420 0xf5d4f000 PLD ...TODO...
-  uint32_t address = 0x00101420;
-  uint32_t opcode =  0xf5d4f000;
+  uint32_t address;
+  uint32_t opcode;
   struct arm_instruction inst;
+
+  // Test PLD Immediate
+  address = 0x00101420;
+  opcode =  0xf5d4f000;
 
   evaluate_pld(opcode, address, &inst);
   printf("output text: %s\n", inst.text);
@@ -206,4 +210,6 @@ void main() {
   opcode = 0xf51ff004; //  pldw[pc, #-4]; 8170 <Thats_all_folks>
   evaluate_pld(opcode, address, &inst);
   printf("output text: %s\n", inst.text);
+
+  return;
 }
