@@ -1,0 +1,33 @@
+Trying to organize some common packages for the next time I setup a computer.
+
+* pandoc
+sudo apt-get install pandoc texlive-latex-base texlive-fonts-recommended
+
+* cFS
+
+* Risk-V
+autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev
+
+* Cosmos
+gcc g++ libssl-dev libyaml-dev libffi-dev libreadline6-dev zlib1g-dev libgdbm3 libgdbm-dev libncurses5-dev git libgstreamer0.10-dev libgstreamer-plugins-base0.10-dev cmake freeglut3 freeglut3-dev qt4-default qt4-dev-tools libsmokeqt4-dev
+
+
+* Others
+The slack desktop app is surprisingly nice
+what is "device-tree-compiler?
+valgrind
+xournal
+gimp
+inkscape
+
+* Hmmm
+gcc-multilib?
+linux-libc-dev:i386
+vim
+python-yaml
+gcc-aarch64-linux-gnu
+binutils-aarch64-linux-gnu
+gcc-arm-linux-gnueabi
+gcc-arm-none-eabi
+
+Please increase `/proc/sys/fs/mqueue/msg_max` to 128. This is required to run CFS as a non-root user.
