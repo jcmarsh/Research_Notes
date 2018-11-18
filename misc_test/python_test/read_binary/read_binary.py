@@ -3,7 +3,7 @@ import sys
 # Read some integer values from an .ini file
 
 if len(sys.argv) < 2:
-	print("Usaged: python read_binary.py <file.pgm>")
+	print("Usaged: python3 read_binary.py <file.pgm>")
 	exit()
 
 print("Opening: ", sys.argv[1])
