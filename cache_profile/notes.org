@@ -1,0 +1,3 @@
+Thinking of graphs I could make of cache vuln:
+- X-axis: instruction from the PC, in order of PC (or first exec?), Y-axis: the number of cycles loaded data has been critical. Gets a little tricky for the lines that load multiple lines
+- X-axis: executed line in order of execution, Y-axis same as above.
