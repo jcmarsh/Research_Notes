@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 
 
-if len(sys.argv) < 1:
+if len(sys.argv) < 2:
 	print "Usage: python hex.py config.ini"
 	exit()
 
@@ -60,6 +60,7 @@ fig = plt.figure(frameon=False)
 #fig.set_size_pixels(width, height)
 ax = plt.Axes(fig, [0., 0., 1., 1.])
 ax.set_axis_off()
+ax.set_aspect('equal')
 fig.add_axes(ax)
 
 #plt.figure(figsize=((width / 300), (height / 300)))
@@ -68,10 +69,11 @@ out_file = my_config.get("output", "out_file")
 grid_size = int(my_config.get("output", "grid_size"))
 heat_map = my_config.get("output", "heat_map")
 
+plt.axis('off')
 plt.hexbin(x, y, gridsize=grid_size, cmap=heat_map) #'gray_r')
 #plt.axis([0, width, 0, height])
 
-fig.savefig(out_file, dpi=300)
+fig.savefig(out_file, bbox_inches='tight', dpi=300)
 #fig.savefig(out_file, bbox_inches='tight', dpi=300)
 #plt.savefig(out_file, bbox_inches='tight', dpi=300)
 
