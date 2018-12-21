@@ -1,6 +1,6 @@
 // Waits for a ping, sends a pong
 
-#include "zhelpers.h"
+#include "ping_pong.h"
 
 int main(void) {
   void *context = zmq_ctx_new();

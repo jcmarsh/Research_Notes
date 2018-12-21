@@ -1,12 +1,12 @@
-INC = -I../../libzmq/include -I../common_inc/
+INC = -I../../libzmq/include
 LIB = -L../../libzmq/src/.libs -lzmq
 
 all: zero_sb ping pong
 
-ping: ping.c
+ping: ping.c ping_pong.h
 	gcc ping.c -o ping $(INC) $(LIB)
 
-pong: pong.c
+pong: pong.c ping_pong.h
 	gcc pong.c -o pong $(INC) $(LIB)
 
 zero_sb: zero_sb.c
