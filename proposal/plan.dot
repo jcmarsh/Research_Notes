@@ -1,0 +1,19 @@
+digraph Plan {
+	rankdir=LR;
+	Propose;
+	JTAG [label="JTAG Injection\nCampaign"];
+	DrSEUs [label="DrSEUs Injection\nCampaign"];
+	Tool [label="Tool\nComparison"];
+	Publish [label="Publish\nCache Profile"];
+	Defend [label="Defend\nDissertation"];
+
+ 	Propose -> JTAG;
+	Propose -> DrSEUs;
+	Propose -> Publish;
+
+	JTAG -> Tool;
+	DrSEUs -> Tool;
+
+	Tool -> Defend;
+	Publish -> Defend;
+}
