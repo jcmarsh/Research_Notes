@@ -3,8 +3,8 @@ digraph Plan {
 	Propose;
 	JTAG [label="JTAG Injection\nCampaign"];
 	DrSEUs [label="DrSEUs Injection\nCampaign"];
-	Tool [label="Tool\nComparison"];
-	Publish [label="Publish\nCache Profile"];
+	Tool [label="Injection\nComparison"];
+	Publish [label="Journal Submission:\nCache Profile"];
 	Defend [label="Defend\nDissertation"];
 
  	Propose -> JTAG;

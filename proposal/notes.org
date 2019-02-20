@@ -1,0 +1,16 @@
+To convert to an image, run something like this:
+
+dot -Tpdf plan.dot -o plan.pdf
+
+or
+
+dot -Tsvg plan.dot -o plan.svg
+
+To get it into a google drive document (such as a slide show), you can either output is a bitmap format such as .png.
+This will make the text look fuzzy as it is resized.
+
+The better option is to output as a .svg.
+Then use CloudConvert to make it into a .emf.
+Google Drawings can then be used to open the .emf, and you can just highlight / copy / paste from there into the slideshow.
+
+Simple, right?
