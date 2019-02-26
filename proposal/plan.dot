@@ -2,7 +2,7 @@ digraph Plan {
 	rankdir=LR;
 	Propose;
 	JTAG [label="JTAG Injection\nCampaign"];
-	DrSEUs [label="DrSEUs Injection\nCampaign"];
+	DrSEUs [label="Sim-Based Injection\nCampaign"];
 	Tool [label="Injection\nComparison"];
 	Publish [label="Journal Submission:\nCache Profile"];
 	Defend [label="Defend\nDissertation"];
