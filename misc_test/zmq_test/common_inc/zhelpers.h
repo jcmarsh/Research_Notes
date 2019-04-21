@@ -46,6 +46,8 @@
 //  Receive 0MQ string from socket and convert into C string
 //  Caller must free returned string. Returns NULL if the context
 //  is being terminated.
+//  TODO: This can cause big errors! From the zmq_recv api:
+//    Note that the value can exceed the value of the len parameter in case the message was truncated
 static char *
 s_recv (void *socket) {
     char buffer [256];
