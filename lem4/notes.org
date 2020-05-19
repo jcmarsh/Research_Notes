@@ -1,0 +1,73 @@
+Setting up Lem4
+
+* [X] Ubuntu 20.04 Server
+Select OpenSSH on install
+* [X] Hostname: avahi-daemon
+Wow, that was easy!
+
+> sudo apt install avahi-daemon
+> service avahi-daemon start
+    
+Now setup as lem4.local. Nice.
+[X] Does it persist after reboot?
+
+* [X] NFS - Figured it out... but nevermind.
+Following... something? Ubuntu server guide.
+https://ubuntu.com/server/docs
+
+Made a folder /liftpyramid with chmod 777
+
+Added the following to lem4 /etc/exports
+/liftpyramid *(rw,sync,no_subtree_check)
+
+Need to rsync between Dropbox and liftpyramid, I think...
+
+Cool, now on lem7:
+sudo mount -t nfs -o proto=tcp,port=2049 10.42.0.76:/liftpyramid /liftpyramid
+lem4.local should also work...
+
+Need two things now:
+[ ] Local copy for lem7
+[ ] Backing up to external HD on lem4
+
+Oh man, it looks like I should be using rsync instead for this whole job. I think I can run it as a daemon on lem4.
+
+Okay, I guess I'll do that.
+
+* [X] rsync
+jcmarsh@LemuL-N24:~$ rsync -avze ssh /home/jcmarsh/Dropbox/ jcmarsh@lem4.local:~/liftsphere
+
+I don't know. I need to figure out what I actually need here. Periodic rsyncs seem fine... although that doesn't fully recrate the Dropbox experience. And I think that is okay.
+
+Just need to set so that when my laptop connects to the home network, it syncs
+https://wiki.ubuntu.com/OnNetworkConnectionRunScript
+
+lem7, add script to /etc/network/if-up.d
+
+if [ `iwlist wlp2s0 scanning | grep NSA_VAN` ] then
+rsync -avze ssh --delete /home/jcmarsh/Dropbox/ jcmarsh@lem4.local:~/liftsphere
+fi
+
+Okay, added that to a script, and set that in crontab. Time to see if it runs.
+
+> crontab -l
+> crontab -e
+> service cron status
+
+Don't forget to make the script executable.
+
+crontab line:
+*/5 * * * * /home/jcmarsh/research_master/Research_Notes/lem4/sync_lift_sphere.sh > /home/jcmarsh/research_master/Research_Notes/lem4/cron_output.log 2>&1
+
+* [X] Folding
+
+Downloaded the file...
+And now it should run on startup. It's running now.
+
+/etc/fahclient/config.xml
+
+Adding fahcontrol to lem7 to see if I can control from here. Can't seem to connect... but okay. It's running, I'll know tomorrow if it submitted anything from the stats page.
+
+* [ ] Mysterium
+* [ ] External Backup
+* [ ] git repos
