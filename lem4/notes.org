@@ -68,6 +68,20 @@ And now it should run on startup. It's running now.
 
 Adding fahcontrol to lem7 to see if I can control from here. Can't seem to connect... but okay. It's running, I'll know tomorrow if it submitted anything from the stats page.
 
+* [X] git repos
+
+This was really easy. On Lem4, just make a bare repo:
+> git init --bare
+
+On Lem7, clone the repo:
+> git clone jcmarsh@lem4.local:/home/jcmarsh/repos/private_notes
+
 * [ ] Mysterium
 * [ ] External Backup
-* [ ] git repos
+* [ ] Scaling power
+
+Doesn't persist on restart yet.
+
+> sensors
+> sudo cpupower frequency-set -u 2000000
+> sudo cpupower frequency-info
