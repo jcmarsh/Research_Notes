@@ -13,5 +13,8 @@ Script for making a new cFS application, but requires some template files.
 
 ** normal_test.py
 
+* threads
+Two threads printing messages.
+
 * visualizations
 Scripts for producing the surface area graphics. Unfortunately the hatching doesn't display correctly in every pdf viewer so the overlay gets lost. Includes some of the data used to generate (in .ods, also copy pasted into the scripts). Could use some cleanup.
