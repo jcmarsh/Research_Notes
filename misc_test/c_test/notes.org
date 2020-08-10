@@ -18,6 +18,9 @@ Incomplete notes on what these tests are supposed to do...
 
 * clock_gettime
 
+* cmake
+Barebones cmake project
+
 * cycle_count
 
 * fifo
@@ -32,6 +35,9 @@ Sanity check on updating a global variable from within a for loop statement for 
 * ifdef
 
 * linked
+
+* macros
+Bad name? 'make' prints out the preprocessor defines, look for WHUT
 
 * parse_interrupts
 
