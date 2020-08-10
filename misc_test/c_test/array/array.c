@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+/*
 void main() {
   int len =  16;
   double buff[2];
@@ -16,8 +17,9 @@ void main() {
   }
   printf("\n");
 }
-  
-/*
+*/
+
+
 void main() {
   int len = 10;
   char buffer[len];
@@ -47,5 +49,7 @@ void main() {
     printf("%2x ", ((char *)buf)[i]);
   }
   printf("\n");
+
+  // Try printing from a 64 bit int
+  printf("0x%016lX\n", *((unsigned long int *) buffer));
 }
-*/

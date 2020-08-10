@@ -34,6 +34,6 @@ void main(int argc, void * argv) {
   SwapUInt64(&reversed);
   printf("Reverse 0x%016lX <-> 0x%016lX\n", original, reversed);
 
-  SwapUInt64((void *)&reversed_pointer);
+  SwapUInt64((uint64_t *)&reversed_pointer);
   printf("Reverse Pointer 0x%016lX <-> 0x%016lX\n", original_pointer, reversed_pointer);
 }
